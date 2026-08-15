@@ -198,7 +198,6 @@
 "hotkeys.mouseButton.assign" = "Добавить";
 "hotkeys.mouseButton.listening" = "Нажмите кнопку…";
 "hotkeys.mouseButton.assigned" = "Кнопка %d";
-"hotkeys.mouseButton.clear" = "Сбросить";
 "hotkeys.openMain" = "Открыть DOKA:";
 "hotkeys.openHistory" = "Открыть историю:";
 "hotkeys.window.footer" = "Эти сочетания глобальные и показываются рядом с пунктами меню-бара.";
@@ -235,7 +234,6 @@
 "history.clear" = "Очистить историю";
 "history.empty" = "История пуста — продиктуйте что-нибудь.";
 "history.notFound" = "Ничего не найдено.";
-"history.duration" = "%.1f с";
 "history.delete" = "Удалить";
 "history.select" = "Выбрать";
 "history.expand" = "Развернуть";
@@ -357,7 +355,6 @@
 "transcribe.save" = "Сохранить как…";
 "transcribe.speaker.unknown" = "Спикер";
 "transcribe.speaker.name" = "Спикер %d";
-"transcribe.copyFormat" = "Формат копирования:";
 "transcribe.format.plain" = "Чистый текст";
 "transcribe.format.timestamps" = "С тайм-кодами";
 "transcribe.format.srt" = "Субтитры SRT";
