@@ -25,7 +25,7 @@ Versions are taken from `DOKA-app/Package.resolved`.
 FluidAudio bundles its own third-party components (`fastcluster`, `vbx`); their licenses
 ship with the package in `ThirdPartyLicenses/`.
 
-## Speech models
+## Models
 
 Models are downloaded by the user at runtime and are not part of this repository or of the
 application bundle.
@@ -34,9 +34,16 @@ application bundle.
 |---|---|---|
 | Whisper large-v3-turbo (OpenAI) | MIT | https://huggingface.co/openai/whisper-large-v3-turbo |
 | Parakeet TDT 0.6B v3 (NVIDIA) | CC-BY-4.0 | https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3 |
+| Speaker diarization, Core ML (FluidInference) | CC-BY-4.0 | https://huggingface.co/FluidInference/speaker-diarization-coreml |
 
-**Attribution required by CC-BY-4.0:** *Parakeet TDT 0.6B v3* by NVIDIA, used under
-[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+**Attribution required by CC-BY-4.0:**
+
+- *Parakeet TDT 0.6B v3* by NVIDIA, used under
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- *speaker-diarization-coreml* by FluidInference, used under
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). It is a Core ML conversion of
+  [pyannote/speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1)
+  by Hervé Bredin, also CC-BY-4.0.
 
 ## NOTICE files (Apache-2.0 §4(d))
 

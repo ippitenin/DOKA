@@ -161,8 +161,10 @@ enum TranscriptSegmentSplitter {
     }
 
     /// Склейка текста из слов: одиночная пунктуация (мусорные токены)
-    /// приклеивается к предыдущему слову без пробела.
-    private static func joinWords(_ words: [TranscriptWord]) -> String {
+    /// приклеивается к предыдущему слову без пробела. Не private —
+    /// тем же способом собирает текст `SpeakerAssignment`, когда режет
+    /// сегмент на репликах разных спикеров.
+    static func joinWords(_ words: [TranscriptWord]) -> String {
         var parts: [String] = []
         for word in words {
             let isPunctuationOnly = word.text.allSatisfy { $0.isPunctuation || $0.isSymbol }

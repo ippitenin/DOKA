@@ -158,17 +158,23 @@ struct TranscribeAudioSectionView: View {
     // MARK: - Параметры
 
     private var optionsCard: some View {
-        SettingsCard {
-            SettingsRow(title: L("transcribe.diarize"), help: L("transcribe.diarize.help")) {
+        // Сноска появляется только вне встроенного сервиса: у остальных часть
+        // параметров остаётся видимой, но недоступной, и это надо объяснить.
+        SettingsCard(footer: controller.isBuiltinService ? nil : L("transcribe.builtinOnly")) {
+            SettingsRow(title: L("transcribe.diarize"),
+                        help: controller.isBuiltinService
+                            ? L("transcribe.diarize.help")
+                            : L("transcribe.diarize.helpLocal")) {
                 SettingsSwitch(isOn: $controller.diarize)
             }
-            // Параметры качества диаризации — специфика Nexara, кастомным
-            // OpenAI-совместимым сервисам эти поля неизвестны. Ряд компактных
-            // плашек вместо трёх строк формы — карточка и так перегружена;
-            // пояснения по всем трём параметрам — в help тумблера диаризации.
-            if controller.diarize && controller.isBuiltinService {
+            // Ряд компактных плашек вместо трёх строк формы — карточка и так
+            // перегружена; пояснения по всем трём параметрам — в help тумблера.
+            if controller.diarize {
+                if controller.usesLocalDiarization {
+                    diarizerModelRow
+                }
                 diarizationTiles
-                if controller.rolesMode == .custom {
+                if controller.rolesMode == .custom && controller.isBuiltinService {
                     rolesEditor
                 }
             }
@@ -193,26 +199,35 @@ struct TranscribeAudioSectionView: View {
                 )
             }
             // LLM-анализ — специфика Nexara: у кастомных OpenAI-совместимых
-            // API prompt значит другое (контекстная подсказка Whisper).
-            if controller.isBuiltinService {
-                CardDivider()
-                SettingsRow(title: L("transcribe.llm"), help: L("transcribe.llm.help")) {
-                    SettingsPopup(
-                        titles: LLMAnalysisPreset.allCases.map(\.title),
-                        selectionIndex: Binding(
-                            get: { LLMAnalysisPreset.allCases.firstIndex(of: controller.llmPreset) ?? 0 },
-                            set: { controller.llmPreset = LLMAnalysisPreset.allCases[$0] }
-                        )
+            // API prompt значит другое (контекстная подсказка Whisper), а
+            // локальной модели такого размера на Mac нет. Строка остаётся на
+            // месте приглушённой — чтобы функция не «пропадала» молча.
+            CardDivider()
+            SettingsRow(title: L("transcribe.llm"), help: L("transcribe.llm.help")) {
+                // Гасим ТОЛЬКО контрол, а не строку целиком: `.disabled` на
+                // строке убил бы и «вопросик», в котором как раз написано,
+                // почему функция недоступна.
+                SettingsPopup(
+                    titles: LLMAnalysisPreset.allCases.map(\.title),
+                    selectionIndex: Binding(
+                        get: { LLMAnalysisPreset.allCases.firstIndex(of: controller.llmPreset) ?? 0 },
+                        set: { controller.llmPreset = LLMAnalysisPreset.allCases[$0] }
                     )
-                }
-                if controller.llmPreset == .custom {
-                    llmPromptEditor
-                }
+                )
+                .disabled(!controller.isBuiltinService)
+                .opacity(controller.isBuiltinService ? 1 : 0.5)
+            }
+            if controller.llmPreset == .custom && controller.isBuiltinService {
+                llmPromptEditor
             }
         }
         .animation(DS.Anim.section, value: controller.diarize)
         .animation(DS.Anim.section, value: controller.rolesMode)
         .animation(DS.Anim.section, value: controller.llmPreset)
+        .animation(DS.Anim.section, value: controller.usesLocalDiarization)
+        // Сервис могли сменить на локальный уже при включённой диаризации —
+        // модель нужна и в этом случае.
+        .onChange(of: settings.providerID) { _, _ in controller.ensureDiarizerModel() }
     }
 
     /// Поле своего промпта анализа: многострочное, растёт до 5 строк.
@@ -226,6 +241,9 @@ struct TranscribeAudioSectionView: View {
     }
 
     /// Ряд плашек параметров диаризации: спикеры / тип записи / роли.
+    /// «Спикеры» понимают оба движка (у Nexara — `num_speakers`, у локального
+    /// диаризатора — точное число кластеров), «Тип записи» и «Роли» — только
+    /// Nexara: они остаются на месте приглушёнными.
     private var diarizationTiles: some View {
         HStack(spacing: 10) {
             OptionTile(
@@ -242,6 +260,7 @@ struct TranscribeAudioSectionView: View {
                 selectedIndex: DiarizationSetting.allCases.firstIndex(of: controller.diarizationSetting) ?? 0,
                 onSelect: { controller.diarizationSetting = DiarizationSetting.allCases[$0] }
             )
+            .disabled(!controller.isBuiltinService)
             OptionTile(
                 caption: L("transcribe.roles"),
                 value: controller.rolesMode.title,
@@ -249,6 +268,23 @@ struct TranscribeAudioSectionView: View {
                 selectedIndex: RolesMode.allCases.firstIndex(of: controller.rolesMode) ?? 0,
                 onSelect: { controller.rolesMode = RolesMode.allCases[$0] }
             )
+            .disabled(!controller.isBuiltinService)
+        }
+        .padding(.horizontal, DS.Spacing.cardPadding)
+        .padding(.bottom, 9)
+    }
+
+    /// Состояние модели диаризатора: она нужна только вне встроенного сервиса
+    /// и качается сама при включении тумблера — строка показывает прогресс,
+    /// даёт отменить загрузку и удалить уже скачанную модель.
+    private var diarizerModelRow: some View {
+        HStack(spacing: 10) {
+            Text(L("transcribe.diarize.model"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            LocalAssetStatusView(asset: .diarizer)
+                .controlSize(.small)
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, DS.Spacing.cardPadding)
         .padding(.bottom, 9)
@@ -282,6 +318,8 @@ struct TranscribeAudioSectionView: View {
     private var canTranscribe: Bool {
         guard controller.pickedFileName != nil else { return false }
         if case .transcribing = controller.phase { return false }
+        // Диаризация включена, а модель ещё качается — запуск заведомо упал бы.
+        if controller.isDiarizerModelMissing { return false }
         return controller.rolesValidationMessage == nil
     }
 
@@ -291,8 +329,11 @@ struct TranscribeAudioSectionView: View {
         SectionCard {
             HStack(spacing: 12) {
                 ProgressView().controlSize(.small)
-                Text(L("transcribe.inProgress"))
+                // Локальная диаризация идёт минутами — показываем её прогресс
+                // вместо неподвижного «Распознавание…».
+                Text(controller.progressNote ?? L("transcribe.inProgress"))
                     .foregroundStyle(.secondary)
+                    .monospacedDigit()
                 Spacer()
                 Button(L("transcribe.cancel")) { controller.cancelTranscription() }
                     .dsGlassButton()
@@ -608,6 +649,13 @@ private struct OptionTile: View {
     let onSelect: (Int) -> Void
 
     @State private var isHovering = false
+    /// Плашка недоступна, когда параметр принадлежит только встроенному
+    /// сервису: остаётся на месте приглушённой, чтобы было видно, что функция
+    /// существует, а не исчезла.
+    @Environment(\.isEnabled) private var isEnabled
+
+    /// Ховер не должен «оживать» на недоступной плашке.
+    private var showsHover: Bool { isHovering && isEnabled }
 
     var body: some View {
         HStack(spacing: 4) {
@@ -624,7 +672,7 @@ private struct OptionTile: View {
             Spacer(minLength: 0)
             Image(systemName: "chevron.up.chevron.down")
                 .font(.caption2.weight(.semibold))
-                .foregroundStyle(isHovering ? DS.accent : .secondary)
+                .foregroundStyle(showsHover ? DS.accent : .secondary)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
@@ -633,17 +681,19 @@ private struct OptionTile: View {
         // белом фоне светлой темы невидим); ховер подсвечивает плашку кнопкой.
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.badge, style: .continuous)
-                .fill(Color.primary.opacity(isHovering ? 0.08 : 0.05))
+                .fill(Color.primary.opacity(showsHover ? 0.08 : 0.05))
         )
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.badge, style: .continuous)
-                .strokeBorder(isHovering ? DS.accent.opacity(0.6) : Color.primary.opacity(0.12), lineWidth: 1)
+                .strokeBorder(showsHover ? DS.accent.opacity(0.6) : Color.primary.opacity(0.12), lineWidth: 1)
         )
         .overlay(
-            TilePopUpOverlay(titles: options, selectedIndex: selectedIndex, onSelect: onSelect)
+            TilePopUpOverlay(titles: options, selectedIndex: selectedIndex,
+                             isEnabled: isEnabled, onSelect: onSelect)
         )
+        .opacity(isEnabled ? 1 : 0.5)
         .onHover { isHovering = $0 }
-        .animation(DS.Anim.hover, value: isHovering)
+        .animation(DS.Anim.hover, value: showsHover)
     }
 }
 
@@ -653,6 +703,7 @@ private struct OptionTile: View {
 private struct TilePopUpOverlay: NSViewRepresentable {
     let titles: [String]
     let selectedIndex: Int
+    let isEnabled: Bool
     let onSelect: (Int) -> Void
 
     func makeNSView(context: Context) -> NSPopUpButton {
@@ -668,6 +719,10 @@ private struct TilePopUpOverlay: NSViewRepresentable {
 
     func updateNSView(_ button: NSPopUpButton, context: Context) {
         context.coordinator.parent = self
+        // Прозрачная кнопка лежит ПОВЕРХ плашки и ловит клики сама: без явного
+        // isEnabled внешний `.disabled` её не остановит (SwiftUI не пробрасывает
+        // окружение внутрь NSViewRepresentable).
+        button.isEnabled = isEnabled
         if button.itemTitles != titles {
             button.removeAllItems()
             // Не addItems(withTitles:) — он молча выкидывает дубликаты.

@@ -53,6 +53,11 @@ final class LocalEngineManager {
     private var loading: (model: LocalModel, task: Task<LocalTranscriptionEngine, Error>)?
     private var idleTask: Task<Void, Never>?
 
+    /// Диаризатор живёт РЯДОМ с речевым движком, а не вместо него: разделение
+    /// по спикерам идёт следом за распознаванием того же файла.
+    private var diarizerEngine: LocalDiarizer?
+    private var diarizerLoading: Task<LocalDiarizer, Error>?
+
     private init() {}
 
     /// Возвращает готовый движок, при необходимости загружая модель.
@@ -105,6 +110,50 @@ final class LocalEngineManager {
         _ = try? await engine(for: model)
     }
 
+    /// Готовый диаризатор, при необходимости загружая модели. Параллельные
+    /// вызовы (прогрев после скачивания + запуск транскрибации) ждут одну задачу.
+    func diarizer() async throws -> LocalDiarizer {
+        if let diarizerEngine, diarizerEngine.isLoaded {
+            touch()
+            return diarizerEngine
+        }
+        if let diarizerLoading {
+            let shared = try await diarizerLoading.value
+            touch()
+            return shared
+        }
+        guard LocalModelStore.shared.isDownloaded(.diarizer) else {
+            throw LocalEngineError.modelMissing
+        }
+
+        let task = Task<LocalDiarizer, Error> {
+            let engine = LocalDiarizer()
+            LocalModelStore.shared.markPreparing(.diarizer, true)
+            defer { LocalModelStore.shared.markPreparing(.diarizer, false) }
+            do {
+                try await engine.load()
+            } catch {
+                throw LocalEngineError.loadFailed(error.localizedDescription)
+            }
+            return engine
+        }
+        diarizerLoading = task
+        defer { diarizerLoading = nil }
+        let engine = try await task.value
+        diarizerEngine = engine
+        touch()
+        return engine
+    }
+
+    func prewarmDiarizer() async {
+        _ = try? await diarizer()
+    }
+
+    func unloadDiarizer() {
+        diarizerEngine?.unload()
+        diarizerEngine = nil
+    }
+
     /// Продлевает окно простоя; вызывать после каждого использования движка.
     func touch() {
         idleTask?.cancel()
@@ -120,6 +169,7 @@ final class LocalEngineManager {
         idleTask = nil
         engine?.unload()
         engine = nil
+        unloadDiarizer()
     }
 
     /// Выгрузка, если в памяти именно эта модель (удаление файлов, смена сервиса).

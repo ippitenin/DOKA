@@ -314,6 +314,11 @@
 "transcribe.remove" = "Remove file";
 "transcribe.diarize" = "Identify speakers (diarization)";
 "transcribe.diarize.help" = "Splits the recording by speaker. Billed additionally; minimum audio length is 3 seconds.\n\n“Speakers” hints how many people speak in the recording: it noticeably improves separation quality, though the exact count is not guaranteed.\n“Recording type” describes the audio; for calls and recordings with frequent interruptions (including Zoom meetings) pick “Phone call”.\n“Roles” labels speakers with meaningful roles instead of “Speaker 1”: “Auto” infers them from the conversation, “Custom roles” takes names separated by commas (up to 10, 64 characters each); extra speakers become “Unknown”. Roles are billed additionally.";
+"transcribe.diarize.helpLocal" = "Splits the recording by speaker right on this Mac: no internet, no billing. It needs a separate model, downloaded once when you turn this on.\n\n“Speakers” hints how many people speak in the recording: it noticeably improves separation quality.\n“Recording type” and “Roles” work only with the built-in service.";
+"transcribe.diarize.model" = "Speaker model:";
+"transcribe.diarize.modelMissing" = "The speaker separation model is not downloaded yet — wait for the download to finish or turn separation off.";
+"transcribe.diarize.progress" = "Separating speakers… %d%%";
+"transcribe.builtinOnly" = "“Recording type”, “Roles” and “AI analysis” work only with the built-in service.";
 "transcribe.numSpeakers" = "Speakers";
 "transcribe.numSpeakers.auto" = "Auto";
 "transcribe.diarizeSetting" = "Recording type";

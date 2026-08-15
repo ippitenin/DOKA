@@ -246,3 +246,90 @@ struct CollapsibleReveal<Content: View>: View {
         .frame(maxWidth: .infinity)
     }
 }
+
+/// Статус скачиваемого локального ресурса: «Не скачана · ~1,6 ГБ» с кнопкой,
+/// прогресс с отменой, «Подготовка модели…», «Скачана · N» с удалением.
+/// Один и тот же ряд состояний нужен и карточке модели распознавания
+/// в «Сервисе», и строке диаризатора на странице транскрибации — держим
+/// его в одном месте, чтобы поведение и вид не разъезжались.
+struct LocalAssetStatusView: View {
+    let asset: LocalAsset
+
+    @ObservedObject private var models = LocalModelStore.shared
+    @State private var confirmDelete = false
+
+    init(asset: LocalAsset) {
+        self.asset = asset
+    }
+
+    var body: some View {
+        content
+            .alert(L("service.local.deleteConfirmTitle"), isPresented: $confirmDelete) {
+                Button(L("service.local.deleteModel"), role: .destructive) {
+                    models.delete(asset)
+                }
+                Button(L("common.cancel"), role: .cancel) {}
+            } message: {
+                Text(L("service.local.deleteConfirmText"))
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch models.state(for: asset) {
+        case .notDownloaded:
+            HStack(spacing: 12) {
+                Text(L("service.local.notDownloaded", Self.bytes(asset.approxDownloadBytes)))
+                    .foregroundStyle(.secondary)
+                Button(L("service.local.download")) {
+                    models.download(asset)
+                }
+                .dsProminentButton()
+                .disabled(asset.requiresAppleSilicon && !LocalModel.isAppleSiliconMac)
+            }
+        case .downloading(let progress):
+            HStack(spacing: 12) {
+                ProgressView(value: progress)
+                    .frame(width: 150)
+                Text(progress.formatted(.percent.precision(.fractionLength(0))))
+                    .font(.callout.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                Button(L("common.cancel")) {
+                    models.cancelDownload(asset)
+                }
+                .dsGlassButton()
+            }
+        case .preparing:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text(L("service.local.preparing"))
+                    .foregroundStyle(.secondary)
+            }
+        case .ready(let size):
+            HStack(spacing: 12) {
+                Label(L("service.local.ready", Self.bytes(size)),
+                      systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                Button(L("service.local.deleteModel")) {
+                    confirmDelete = true
+                }
+                .dsGlassButton()
+            }
+        case .failed(let message):
+            HStack(spacing: 12) {
+                Label(message, systemImage: "xmark.circle.fill")
+                    .font(.callout)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button(L("service.local.download")) {
+                    models.download(asset)
+                }
+                .dsProminentButton()
+            }
+        }
+    }
+
+    private static func bytes(_ count: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: count, countStyle: .file)
+    }
+}
