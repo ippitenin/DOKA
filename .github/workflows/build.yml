@@ -1,0 +1,79 @@
+name: Build
+
+# Автотестов в проекте нет (см. CLAUDE.md → «Гейты верификации»), поэтому CI
+# автоматизирует два из четырёх ручных гейтов: сборку без предупреждений и
+# проверку локализации. Release-сборку с подписью и ручной smoke по-прежнему
+# делает человек.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Сборка и проверки
+    runs-on: macos-26   # нужен Xcode 26: swift-collections объявлен как tools-version 6.2,
+                        # а glassEffect/.buttonStyle(.glass) требуют SDK macOS 26.
+                        # macos-14 в GitHub Actions больше не поддерживается.
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash           # ради pipefail: без него `swift build | tee` вернёт код tee
+        working-directory: DOKA-app   # пакет лежит в подкаталоге, не в корне репозитория
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Версия тулчейна
+        run: |
+          swift --version
+          version=$(swift -version 2>&1 | sed -nE 's/.*Swift version ([0-9]+)\.([0-9]+).*/\1\2/p' | head -1)
+          if [[ -z "$version" || "$version" -lt 62 ]]; then
+            echo "::error::Нужен Swift 6.2+ (Xcode 26): swift-collections объявлен как swift-tools-version 6.2"
+            exit 1
+          fi
+
+      - name: Кеш зависимостей SwiftPM
+        # Кешируются git-зеркала зависимостей (~450 МБ, из них FluidAudio 347 МБ).
+        # .build кешировать нельзя: 1–2 ГБ и абсолютные пути внутри.
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: swiftpm-${{ runner.os }}-${{ hashFiles('DOKA-app/Package.resolved') }}
+          restore-keys: swiftpm-${{ runner.os }}-
+
+      - name: Резолв зависимостей
+        # Отдельным шагом, чтобы расхождение с Package.resolved было видно сразу
+        run: swift package resolve
+
+      - name: Сборка
+        run: swift build 2>&1 | tee "$RUNNER_TEMP/build.log"
+
+      - name: Гейт предупреждений
+        # Только наш код: FluidAudio даёт три своих предупреждения, из-за которых
+        # -warnings-as-errors применить нельзя — он уронил бы сборку на чужом коде.
+        run: |
+          if grep "warning:" "$RUNNER_TEMP/build.log" | grep "Sources/DOKA/"; then
+            echo "::error::Сборка выдала предупреждения в Sources/DOKA — гейт CLAUDE.md требует их отсутствия"
+            exit 1
+          fi
+          echo "Предупреждений в нашем коде нет."
+
+      - name: Синтаксис strings и Info.plist
+        # swift build синтаксис .strings не проверяет вообще: сломанный файл
+        # компилируется и падает уже в рантайме
+        run: |
+          plutil -lint \
+            Sources/DOKA/Resources/ru.lproj/Localizable.strings \
+            Sources/DOKA/Resources/en.lproj/Localizable.strings \
+            Resources/ru.lproj/InfoPlist.strings \
+            Resources/en.lproj/InfoPlist.strings \
+            Resources/Info.plist
+
+      - name: Локализация
+        run: ./scripts/check-localization.sh
