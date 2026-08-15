@@ -25,22 +25,24 @@ Architecture, invariants and the reasoning behind the odd-looking bits are docum
 
 ## Verification gates
 
-There are no automated tests: the app is a single SPM executable target, and XCTest would
-require splitting it into a `DOKACore` library plus a thin executable. That split is
-deliberately postponed, so verification is manual and these four gates replace it:
+The pure logic is covered by tests in `Tests/DOKATests` — around 140 checks that run in
+under a second. Everything else (audio capture, pasting, Keychain, the recorder panels)
+needs a real Mac with real permissions, so it is verified by hand. Five gates:
 
 1. `swift build` — must finish with **no warnings**.
-2. `plutil -lint` on both `Localizable.strings` files (and both `InfoPlist.strings` if you
+2. `swift test` — all green. Add tests for any pure logic you touch.
+3. `plutil -lint` on both `Localizable.strings` files (and both `InfoPlist.strings` if you
    touched them). `swift build` does **not** validate `.strings` syntax — a broken file
    compiles fine and fails at runtime.
-3. `./build.sh` — the release build must sign successfully.
-4. A manual smoke pass over whatever you touched. `CLAUDE.md` lists what to check per area.
+4. `./build.sh` — the release build must sign successfully.
+5. A manual smoke pass over whatever you touched. `CLAUDE.md` lists what to check per area.
 
-**Gates 1 and 2 run automatically on every pull request** (`.github/workflows/build.yml`).
+**Gates 1–3 run automatically on every pull request** (`.github/workflows/build.yml`).
 Run them locally before pushing to get the answer in seconds instead of minutes:
 
 ```bash
 swift build
+swift test
 ./scripts/check-localization.sh
 ```
 
@@ -49,11 +51,11 @@ placeholders (`%@`, `%ld`, …) agree between them, that every key used via `L(.
 and that no dead strings accumulate. If you add a key that is assembled dynamically, add
 its prefix to `DYNAMIC_PREFIXES` in the script — otherwise it will be reported as dead.
 
-Gates 3 and 4 stay manual: CI has no signing certificate and cannot click through the app.
+Gates 4 and 5 stay manual: CI has no signing certificate and cannot click through the app.
 
-Pure logic (`ReplacementEngine`, `TranscriptFormatter`, `LightMarkdown`, and friends) is
-written to be testable and can be verified with a standalone harness that compiles the real
-sources.
+One trap when writing tests: anything that goes through `L(...)` — speaker display names,
+role validation messages — depends on the bundle language. Assert on structure or numbers,
+not on a particular translation.
 
 ## Conventions
 

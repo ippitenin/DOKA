@@ -28,6 +28,15 @@ let package = Package(
             ],
             path: "Sources/DOKA",
             resources: [.process("Resources")]
+        ),
+        // Тесты чистой логики. Сплит на отдельную библиотеку НЕ нужен: SPM
+        // тестирует executable-таргет напрямую, несмотря на top-level код
+        // в main.swift (проверено). Покрывается только логика без UI, звука
+        // и сети — остальное проверяется ручным smoke (см. CLAUDE.md).
+        .testTarget(
+            name: "DOKATests",
+            dependencies: ["DOKA"],
+            path: "Tests/DOKATests"
         )
     ]
 )
