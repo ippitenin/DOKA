@@ -14,6 +14,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/ippitenin/DOKA/actions/workflows/build.yml"><img alt="Build" src="https://github.com/ippitenin/DOKA/actions/workflows/build.yml/badge.svg"></a>
   <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey">
   <img alt="Swift" src="https://img.shields.io/badge/Swift-5.9%2B-orange">
   <img alt="License" src="https://img.shields.io/badge/license-GPL--3.0-blue">
