@@ -145,9 +145,10 @@ machine; file transcription is deliberately isolated from the dictation pipeline
 (`FileTranscriptionController` plus `Network/FileTranscriptionClient.swift`); the design
 system lives in `UI/DesignSystem/`.
 
-There are no automated tests. Instead: a build with no warnings, `plutil -lint` on both
-`Localizable.strings` files, a signed release build, and a manual smoke pass over whatever
-was touched. Pure logic is written to be testable and can be verified outside the app.
+Pure logic is covered by tests — `swift test` runs about 140 checks in under a second, and
+CI runs them on every pull request along with the build and a localisation check. Audio
+capture, pasting, Keychain and the recorder panels need a real Mac with real permissions,
+so those are verified by a manual smoke pass; `CLAUDE.md` lists what to check per area.
 
 Two things worth knowing before you change dependencies or strings:
 
