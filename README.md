@@ -39,6 +39,10 @@ written in Russian.
   subtitles (SRT/VTT) and optional speaker diarization. With the built-in service the job
   runs asynchronously: it survives network loss, sleep, and even an app restart — the
   result is collected without re-uploading the file or paying twice.
+- **Speaker diarization, on-device** — with a local model (or your own OpenAI-compatible
+  service, which has no diarization of its own) DOKA separates speakers on your Mac: a
+  22 MB model downloaded once, no internet and no billing. Roughly 12× faster than
+  real time on Apple silicon.
 - **Recent transcriptions** — a local journal of finished and running jobs. Finished ones
   reopen with every export and a switchable timestamp detail level.
 - **AI analysis** — meeting minutes, a summary, action items or your own prompt. The result
@@ -58,7 +62,7 @@ The three recognition modes differ in what leaves your Mac:
 
 | Mode | What leaves your Mac |
 |---|---|
-| Local models (Whisper, Parakeet) | **Nothing.** Audio never leaves the device, and no key is needed |
+| Local models (Whisper, Parakeet) | **Nothing.** Audio never leaves the device, and no key is needed — speaker diarization included |
 | Built-in service (Nexara) | Audio is uploaded to `api.nexara.ru` for recognition |
 | Custom OpenAI-compatible service | Audio is uploaded to the endpoint you configure |
 
@@ -120,14 +124,17 @@ Pick one in the **Service** section:
 |---|---|---|
 | Whisper Large v3 Turbo (Local) | not needed | ~1.6 GB one-time download, runs through WhisperKit on the Neural Engine |
 | Parakeet TDT 0.6B v3 (Local) | not needed | ~1 GB, runs through FluidAudio, Apple Silicon only |
-| Built-in (Nexara) | required | adds diarization, speaker roles, AI analysis and async jobs |
+| Built-in (Nexara) | required | adds recording-type presets, speaker roles, AI analysis and async jobs |
 | Custom service | required | any OpenAI-compatible `/audio/transcriptions` endpoint |
 
 Local models are downloaded once from the Service section, prepared for your chip on first
-use, and unloaded from memory after five minutes of inactivity. Diarization, speaker roles
-and AI analysis are extensions of the built-in service and stay hidden for the others — a
-plain OpenAI-compatible API has no such fields, and its `prompt` means something else
-entirely.
+use, and unloaded from memory after five minutes of inactivity.
+
+Speaker diarization works with every service: the built-in one does it server-side, everyone
+else gets the on-device diarizer. Two things stay exclusive to the built-in service and are
+shown greyed out elsewhere — the recording-type preset and automatic speaker roles (both
+server features), and AI analysis, because its `prompt` means something entirely different
+in a plain OpenAI-compatible API.
 
 ## Repository layout
 

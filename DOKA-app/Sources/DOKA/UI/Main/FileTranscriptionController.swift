@@ -46,12 +46,24 @@ final class FileTranscriptionController: ObservableObject {
     }
 
     @Published private(set) var phase: Phase = .idle
-    /// Разделение по спикерам (task=diarize). По умолчанию выключено: дороже и медленнее.
-    @Published var diarize = false
+    /// Под-статус длинной операции («Разделение по спикерам… 40 %»):
+    /// локальная диаризация идёт минутами, неподвижный спиннер выглядел бы
+    /// зависанием. nil — показывается обычный текст прогресса.
+    @Published private(set) var progressNote: String?
+    /// Разделение по спикерам. У встроенного сервиса — серверное (task=diarize),
+    /// у остальных — локальный диаризатор на этом Mac.
+    /// По умолчанию выключено: дороже и медленнее.
+    @Published var diarize = false {
+        didSet {
+            guard diarize != oldValue else { return }
+            ensureDiarizerModel()
+        }
+    }
     /// Язык распознавания страницы. По умолчанию — как у диктовки, но меняется
     /// независимо (в общие настройки не пишем — это локальный выбор страницы).
     @Published var language: String = SettingsStore.shared.language
-    /// Подсказка о числе говорящих (только Nexara). nil — авто.
+    /// Подсказка о числе говорящих. nil — авто. Работает и у Nexara
+    /// (`num_speakers`), и у локального диаризатора (точное число кластеров).
     @Published var numSpeakers: Int? = nil
     /// Тип записи для диаризации (только Nexara).
     @Published var diarizationSetting: DiarizationSetting = .general
@@ -82,11 +94,33 @@ final class FileTranscriptionController: ObservableObject {
         return nil
     }
 
-    /// Nexara-специфичные параметры (num_speakers, diarization_setting, роли)
+    /// Nexara-специфичные параметры (diarization_setting, роли, LLM-анализ)
     /// доступны только встроенному сервису: у кастомных OpenAI-совместимых
     /// API таких полей нет, строгий сервер ответит 400.
     var isBuiltinService: Bool {
         SettingsStore.shared.providerID == TranscriptionProvider.builtin.rawValue
+    }
+
+    /// Разделение по спикерам считается на этом Mac: у локальных моделей
+    /// сервера нет вовсе, у пользовательских OpenAI-совместимых сервисов
+    /// диаризации нет в API. Ровно этот случай требует модели диаризатора.
+    var usesLocalDiarization: Bool {
+        diarize && !isBuiltinService
+    }
+
+    /// Диаризация включена, но модель ещё не скачана — запускать нельзя.
+    var isDiarizerModelMissing: Bool {
+        usesLocalDiarization && !LocalModelStore.shared.isDownloaded(.diarizer)
+    }
+
+    /// Ставит модель диаризатора в очередь скачивания, если она нужна и её
+    /// нет. Вызывается при включении тумблера и при смене сервиса; повторные
+    /// вызовы безопасны (идущая загрузка и готовая модель — no-op).
+    func ensureDiarizerModel() {
+        guard usesLocalDiarization else { return }
+        if case .notDownloaded = LocalModelStore.shared.state(for: .diarizer) {
+            LocalModelStore.shared.download(.diarizer)
+        }
     }
 
     /// Итоговый промпт LLM-анализа; nil — анализ выключен или недоступен.
@@ -214,16 +248,27 @@ final class FileTranscriptionController: ObservableObject {
             return
         }
         guard rolesValidationMessage == nil else { return }
+        if isDiarizerModelMissing {
+            phase = .error(L("transcribe.diarize.modelMissing"))
+            ensureDiarizerModel()
+            return
+        }
         let options = FileTranscriptionOptions(
             language: language == "auto" ? nil : language,
-            diarize: diarize,
+            // На сервер `task=diarize` уходит ТОЛЬКО встроенному: у кастомных
+            // OpenAI-совместимых API такого режима нет. Им спикеров проставит
+            // локальный диаризатор.
+            diarize: diarize && isBuiltinService,
             numSpeakers: isBuiltinService ? numSpeakers : nil,
             diarizationSetting: isBuiltinService ? diarizationSetting : .general,
             roles: rolesSpec,
             llmPrompt: effectiveLLMPrompt,
             timestampDetail: timestampDetail
         )
+        let localDiarization = usesLocalDiarization
+        let speakerHint = numSpeakers
         phase = .transcribing
+        progressNote = nil
         let recordID = TranscriptHistoryStore.shared.addPending(
             fileName: url.lastPathComponent,
             provider: SettingsStore.shared.providerTagForHistory)
@@ -236,8 +281,9 @@ final class FileTranscriptionController: ObservableObject {
                 switch route {
                 case .local(let localModel):
                     // Локальный путь: движок + извлечение звука (в т.ч. из видео)
-                    // + маппинг в TranscriptResult. Nexara-фичи (диаризация,
-                    // роли, LLM) сюда не попадают — гейт isBuiltinService.
+                    // + маппинг в TranscriptResult. Роли и LLM-анализ сюда не
+                    // попадают — гейт isBuiltinService; спикеров, если они
+                    // запрошены, проставляет локальный диаризатор.
                     // Загрузка движка и декодирование независимы — перекрываем,
                     // чтобы холодный старт не ждал сумму двух операций.
                     async let engineLoading = LocalEngineManager.shared.engine(for: localModel)
@@ -249,12 +295,21 @@ final class FileTranscriptionController: ObservableObject {
                         wavURL: decoded.url,
                         language: options.language)
                     LocalEngineManager.shared.touch()
+                    guard !Task.isCancelled else { return }
+                    // Диаризация — по тому же временнóму WAV, до его удаления.
+                    let segments = localDiarization
+                        ? await self?.applyLocalSpeakers(wavURL: decoded.url,
+                                                         numSpeakers: speakerHint,
+                                                         words: local.words,
+                                                         segments: local.segments) ?? local.segments
+                        : local.segments
+                    guard !Task.isCancelled else { return }
                     result = TranscriptResult(
                         fullText: local.fullText,
                         language: local.language ?? options.language,
                         duration: decoded.duration,
-                        segments: local.segments,
-                        rawSegments: local.segments,
+                        segments: segments,
+                        rawSegments: segments,
                         words: local.words,
                         llmOutput: nil
                     ).withDetail(options.timestampDetail)
@@ -272,20 +327,95 @@ final class FileTranscriptionController: ObservableObject {
                         detail: options.timestampDetail,
                         deadline: Date().addingTimeInterval(TranscriptHistoryStore.serverResultLifetime))
                 case .remote(let apiKey, let config):
-                    result = try await client.transcribeRich(
+                    // Пользовательский сервис: запрос к серверу и локальная
+                    // диаризация того же файла идут параллельно. Шкала времени
+                    // у них общая — сервер распознаёт исходный файл, а
+                    // декодирование её не сдвигает.
+                    async let remoteResult = client.transcribeRich(
                         fileURL: url, options: options, apiKey: apiKey, config: config)
+                    let spans = localDiarization
+                        ? await self?.localSpeakerSpans(for: url, numSpeakers: speakerHint) ?? nil
+                        : nil
+                    let server = try await remoteResult
+                    guard !Task.isCancelled else { return }
+                    if let spans, !spans.isEmpty {
+                        let merged = SpeakerAssignment.apply(spans: spans,
+                                                             words: server.words,
+                                                             segments: server.rawSegments)
+                        result = TranscriptResult(fullText: server.fullText,
+                                                  language: server.language,
+                                                  duration: server.duration,
+                                                  segments: merged,
+                                                  rawSegments: merged,
+                                                  words: server.words,
+                                                  llmOutput: server.llmOutput)
+                            .withDetail(options.timestampDetail)
+                    } else {
+                        result = server
+                    }
                 }
+                self?.progressNote = nil
                 guard !Task.isCancelled else { return }
                 TranscriptHistoryStore.shared.markDone(recordID, result: result)
                 self?.currentRecordID = nil
                 self?.phase = .done(result)
             } catch {
                 guard !Task.isCancelled, !(error is CancellationError) else { return }
+                self?.progressNote = nil
                 let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 TranscriptHistoryStore.shared.markError(recordID, message: message)
                 self?.currentRecordID = nil
                 self?.phase = .error(message)
             }
+        }
+    }
+
+    // MARK: - Локальная диаризация
+
+    /// Спикеры для уже декодированного WAV (локальный маршрут: файл всё равно
+    /// пришлось декодировать для распознавания). При неудаче возвращаются
+    /// исходные сегменты — расшифровка ценнее спикеров.
+    private func applyLocalSpeakers(wavURL: URL,
+                                    numSpeakers: Int?,
+                                    words: [TranscriptWord],
+                                    segments: [TranscriptSegment]) async -> [TranscriptSegment] {
+        guard let spans = await diarizeSpans(wavURL: wavURL, numSpeakers: numSpeakers),
+              !spans.isEmpty else { return segments }
+        return SpeakerAssignment.apply(spans: spans, words: words, segments: segments)
+    }
+
+    /// Спикеры для файла, который распознаёт сервер: звук приходится
+    /// декодировать самим. Временный WAV удаляется здесь же.
+    private func localSpeakerSpans(for url: URL, numSpeakers: Int?) async -> [SpeakerSpan]? {
+        guard let decoded = try? await AudioFileDecoder.decodeToWav(url) else { return nil }
+        defer { try? FileManager.default.removeItem(at: decoded.url) }
+        return await diarizeSpans(wavURL: decoded.url, numSpeakers: numSpeakers)
+    }
+
+    /// Общий вызов диаризатора. Ошибки НЕ пробрасываются: короткая запись,
+    /// тишина или сбой моделей не должны обнулять готовую расшифровку —
+    /// она просто останется без спикеров (причина уходит в лог).
+    private func diarizeSpans(wavURL: URL, numSpeakers: Int?) async -> [SpeakerSpan]? {
+        do {
+            let diarizer = try await LocalEngineManager.shared.diarizer()
+            guard !Task.isCancelled else { return nil }
+            progressNote = L("transcribe.diarize.progress", 0)
+            let spans = try await diarizer.diarize(
+                wavURL: wavURL,
+                numSpeakers: numSpeakers,
+                progress: { [weak self] fraction in
+                    self?.progressNote = L("transcribe.diarize.progress", Int(fraction * 100))
+                }
+            )
+            LocalEngineManager.shared.touch()
+            progressNote = nil
+            return spans
+        } catch {
+            progressNote = nil
+            if !(error is CancellationError) && !Task.isCancelled {
+                NSLog("DOKA: локальная диаризация не удалась: \(error.localizedDescription)")
+            }
+            return nil
         }
     }
 
@@ -296,6 +426,7 @@ final class FileTranscriptionController: ObservableObject {
     func cancelTranscription() {
         task?.cancel()
         task = nil
+        progressNote = nil
         if let id = currentRecordID {
             TranscriptHistoryStore.shared.markCancelled(id)
             currentRecordID = nil

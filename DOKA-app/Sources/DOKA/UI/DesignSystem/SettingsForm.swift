@@ -72,12 +72,19 @@ struct SettingsPopup: View {
     /// nil — ширина по содержимому (для списков с длинными пунктами).
     var width: CGFloat? = 180
 
+    /// SwiftUI НЕ пробрасывает `.disabled` внутрь NSViewRepresentable сам:
+    /// без явной передачи в `NSPopUpButton.isEnabled` заблокированный снаружи
+    /// список продолжает раскрываться по клику.
+    @Environment(\.isEnabled) private var isEnabled
+
     var body: some View {
         if let width {
-            PopUpButton(titles: titles, selectionIndex: $selectionIndex, fixedWidth: width)
+            PopUpButton(titles: titles, selectionIndex: $selectionIndex,
+                        fixedWidth: width, isEnabled: isEnabled)
                 .frame(width: width, height: 26)
         } else {
-            PopUpButton(titles: titles, selectionIndex: $selectionIndex, fixedWidth: nil)
+            PopUpButton(titles: titles, selectionIndex: $selectionIndex,
+                        fixedWidth: nil, isEnabled: isEnabled)
                 .fixedSize()
         }
     }
@@ -87,6 +94,7 @@ private struct PopUpButton: NSViewRepresentable {
     let titles: [String]
     @Binding var selectionIndex: Int
     let fixedWidth: CGFloat?
+    let isEnabled: Bool
 
     func makeNSView(context: Context) -> NSView {
         let button = NSPopUpButton(frame: .zero, pullsDown: false)
@@ -110,6 +118,7 @@ private struct PopUpButton: NSViewRepresentable {
     func updateNSView(_ view: NSView, context: Context) {
         guard let button = context.coordinator.button else { return }
         context.coordinator.parent = self
+        button.isEnabled = isEnabled
         if button.itemTitles != titles {
             button.removeAllItems()
             // Не addItems(withTitles:) — он молча выкидывает дубликаты.

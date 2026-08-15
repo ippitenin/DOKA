@@ -2,10 +2,11 @@ import Foundation
 import WhisperKit
 import FluidAudio
 
-/// Скачивание и состояние локальных моделей. Модели живут в ФИКСИРОВАННОЙ
-/// папке `Application Support/DOKA/Models` (`AppDataFolder.modelsURL`) и НЕ
-/// переезжают вместе с «Папкой данных»: это перекачиваемый кеш, а не данные
-/// пользователя — перенос 1.5+ ГБ сделал бы миграцию папки блокирующей.
+/// Скачивание и состояние локальных ресурсов (речевые модели + диаризатор).
+/// Всё живёт в ФИКСИРОВАННОЙ папке `Application Support/DOKA/Models`
+/// (`AppDataFolder.modelsURL`) и НЕ переезжает вместе с «Папкой данных»:
+/// это перекачиваемый кеш, а не данные пользователя — перенос 1.5+ ГБ сделал
+/// бы миграцию папки блокирующей.
 @MainActor
 final class LocalModelStore: ObservableObject {
     static let shared = LocalModelStore()
@@ -18,21 +19,21 @@ final class LocalModelStore: ObservableObject {
         case failed(String)
     }
 
-    @Published private(set) var states: [LocalModel: ModelState] = [:]
+    @Published private(set) var states: [LocalAsset: ModelState] = [:]
 
-    private var downloadTasks: [LocalModel: Task<Void, Never>] = [:]
+    private var downloadTasks: [LocalAsset: Task<Void, Never>] = [:]
 
-    /// Последний известный размер модели на диске; считается фоном
+    /// Последний известный размер ресурса на диске; считается фоном
     /// (`refreshSize`), до готовности показывается примерный размер скачивания.
-    private var knownSizes: [LocalModel: Int64] = [:]
+    private var knownSizes: [LocalAsset: Int64] = [:]
 
     private init() {
-        for model in LocalModel.allCases {
-            if Self.isOnDisk(model) {
-                states[model] = .ready(readySize(model))
-                refreshSize(model)
+        for asset in LocalAsset.allCases {
+            if Self.isOnDisk(asset) {
+                states[asset] = .ready(readySize(asset))
+                refreshSize(asset)
             } else {
-                states[model] = .notDownloaded
+                states[asset] = .notDownloaded
             }
         }
         // Осиротевшие папки незавершённого фонового удаления (kill приложения
@@ -52,67 +53,101 @@ final class LocalModelStore: ObservableObject {
         .appendingPathComponent("models/argmaxinc/whisperkit-coreml", isDirectory: true)
         .appendingPathComponent(LocalModel.whisperKitVariant, isDirectory: true)
 
-    /// Папка моделей Parakeet; структуру внутри ведёт FluidAudio.
+    /// Папка моделей Parakeet. Имя — НЕ произвольное: FluidAudio срезает у
+    /// переданного пути последний компонент и приписывает имя репозитория
+    /// (и в `download`, и в `load`, и в `modelsExist`), поэтому файлы всё
+    /// равно оказываются в `Models/parakeet-tdt-0.6b-v3`. Пока константа
+    /// указывала на `Models/parakeet`, подсчёт размера давал 0, а удаление
+    /// модели было no-op — папки с таким именем на диске не существует.
     nonisolated static let parakeetFolder = AppDataFolder.modelsURL
-        .appendingPathComponent("parakeet", isDirectory: true)
+        .appendingPathComponent("parakeet-tdt-0.6b-v3", isDirectory: true)
 
-    private nonisolated static func rootFolder(for model: LocalModel) -> URL {
-        switch model {
-        case .whisper: return whisperBase
-        case .parakeet: return parakeetFolder
+    /// Папка диаризатора. Здесь наоборот: `OfflineDiarizerModels.load`
+    /// передаёт путь в ModelHub как есть, и тот создаёт внутри подпапку
+    /// репозитория — см. `diarizerModelFolder`.
+    nonisolated static let diarizerFolder = AppDataFolder.modelsURL
+        .appendingPathComponent("diarizer", isDirectory: true)
+
+    /// Фактическая папка с файлами диаризатора (проверено стендом).
+    nonisolated static let diarizerModelFolder = diarizerFolder
+        .appendingPathComponent("speaker-diarization", isDirectory: true)
+
+    private nonisolated static func rootFolder(for asset: LocalAsset) -> URL {
+        switch asset {
+        case .speech(.whisper): return whisperBase
+        case .speech(.parakeet): return parakeetFolder
+        case .diarizer: return diarizerFolder
         }
     }
 
     // MARK: - Состояние
 
-    /// Файлы модели на месте (независимо от того, загружена ли она в память).
-    func isDownloaded(_ model: LocalModel) -> Bool {
-        switch states[model] {
+    /// Файлы ресурса на месте (независимо от того, загружен ли он в память).
+    func isDownloaded(_ asset: LocalAsset) -> Bool {
+        switch states[asset] {
         case .ready, .preparing: return true
         default: return false
         }
     }
 
-    func state(for model: LocalModel) -> ModelState {
-        states[model] ?? .notDownloaded
+    func isDownloaded(_ model: LocalModel) -> Bool { isDownloaded(.speech(model)) }
+
+    func state(for asset: LocalAsset) -> ModelState {
+        states[asset] ?? .notDownloaded
     }
 
+    func state(for model: LocalModel) -> ModelState { state(for: .speech(model)) }
+
     /// Проверка файлов на диске (без обращения к состоянию в памяти).
-    private static func isOnDisk(_ model: LocalModel) -> Bool {
-        switch model {
-        case .whisper:
+    private static func isOnDisk(_ asset: LocalAsset) -> Bool {
+        let fm = FileManager.default
+        switch asset {
+        case .speech(.whisper):
             // Ключевые компоненты варианта; частично скачанная папка не считается.
-            let fm = FileManager.default
             return fm.fileExists(atPath: whisperModelFolder.appendingPathComponent("AudioEncoder.mlmodelc").path)
                 && fm.fileExists(atPath: whisperModelFolder.appendingPathComponent("TextDecoder.mlmodelc").path)
-        case .parakeet:
+        case .speech(.parakeet):
             return AsrModels.modelsExist(at: parakeetFolder, version: .v3)
+        case .diarizer:
+            // Свой аналог `modelsExist` — у офлайнового диаризатора такого API нет.
+            return diarizerRequiredFiles.allSatisfy {
+                fm.fileExists(atPath: diarizerModelFolder.appendingPathComponent($0).path)
+            }
         }
     }
 
+    /// Состав офлайнового диаризатора (VBx): четыре модели + параметры PLDA.
+    private nonisolated static let diarizerRequiredFiles = [
+        ModelNames.OfflineDiarizer.segmentationFile,
+        ModelNames.OfflineDiarizer.fbankFile,
+        ModelNames.OfflineDiarizer.embeddingFile,
+        ModelNames.OfflineDiarizer.pldaRhoFile,
+        ModelNames.OfflineDiarizer.pldaParameters
+    ]
+
     /// Размер для состояния `.ready`: последний посчитанный, до него — оценка.
-    private func readySize(_ model: LocalModel) -> Int64 {
-        knownSizes[model] ?? model.approxDownloadBytes
+    private func readySize(_ asset: LocalAsset) -> Int64 {
+        knownSizes[asset] ?? asset.approxDownloadBytes
     }
 
-    /// Пересчитывает размер модели фоновым обходом папки: рекурсивный stat
+    /// Пересчитывает размер ресурса фоновым обходом папки: рекурсивный stat
     /// многогигабайтного дерева на главном потоке блокировал бы запуск
     /// приложения (первое обращение к синглтону — в `applicationDidFinishLaunching`).
-    private func refreshSize(_ model: LocalModel) {
+    private func refreshSize(_ asset: LocalAsset) {
         Task.detached(priority: .utility) {
-            let size = Self.sizeOnDisk(model)
+            let size = Self.sizeOnDisk(asset)
             await MainActor.run {
                 let store = LocalModelStore.shared
-                store.knownSizes[model] = size
-                if case .ready = store.state(for: model) {
-                    store.states[model] = .ready(size)
+                store.knownSizes[asset] = size
+                if case .ready = store.state(for: asset) {
+                    store.states[asset] = .ready(size)
                 }
             }
         }
     }
 
-    private nonisolated static func sizeOnDisk(_ model: LocalModel) -> Int64 {
-        directorySize(rootFolder(for: model))
+    private nonisolated static func sizeOnDisk(_ asset: LocalAsset) -> Int64 {
+        directorySize(rootFolder(for: asset))
     }
 
     private nonisolated static func directorySize(_ url: URL) -> Int64 {
@@ -136,107 +171,125 @@ final class LocalModelStore: ObservableObject {
     /// и без квантования перерисовка SwiftUI дёргалась бы сотни раз в секунду.
     /// Синглтон напрямую, без захвата слабого self из внешней задачи.
     private final class ProgressSink: @unchecked Sendable {
-        private let model: LocalModel
+        private let asset: LocalAsset
         private let lock = NSLock()
         private var lastPercent = -1
 
-        init(model: LocalModel) { self.model = model }
+        init(asset: LocalAsset) { self.asset = asset }
 
         /// Вход — уже извлечённая дробь: у WhisperKit прогресс `Foundation.Progress`,
         /// у FluidAudio — собственный `DownloadProgress`, общего типа нет.
+        /// Прогресс не пятится: диаризатор грузит модели двумя проходами
+        /// (разные compute units у FBank), и вторая шкала снова стартует с середины.
         func report(fraction: Double) {
             let percent = Int(fraction * 100)
             lock.lock()
-            let changed = percent != lastPercent
+            let changed = percent > lastPercent
             if changed { lastPercent = percent }
             lock.unlock()
             guard changed else { return }
-            Task { @MainActor [model] in
-                LocalModelStore.shared.updateProgress(model, fraction)
+            Task { @MainActor [asset] in
+                LocalModelStore.shared.updateProgress(asset, fraction)
             }
         }
     }
 
-    func download(_ model: LocalModel) {
+    func download(_ model: LocalModel) { download(.speech(model)) }
+
+    func download(_ asset: LocalAsset) {
         // Барьер платформы здесь, а не только в `.disabled` кнопки: любой
         // другой путь к скачиванию не должен качать неподдерживаемую модель.
-        guard !model.requiresAppleSilicon || LocalModel.isAppleSiliconMac else {
-            states[model] = .failed(L("service.local.intelUnsupported"))
+        guard !asset.requiresAppleSilicon || LocalModel.isAppleSiliconMac else {
+            states[asset] = .failed(L("service.local.intelUnsupported"))
             return
         }
-        if case .downloading = state(for: model) { return }
-        states[model] = .downloading(0)
+        if case .downloading = state(for: asset) { return }
+        states[asset] = .downloading(0)
 
         let task = Task { [weak self] in
             do {
-                let sink = ProgressSink(model: model)
-                switch model {
-                case .whisper:
+                let sink = ProgressSink(asset: asset)
+                switch asset {
+                case .speech(.whisper):
                     _ = try await WhisperKit.download(
                         variant: LocalModel.whisperKitVariant,
                         downloadBase: Self.whisperBase,
                         progressCallback: { sink.report(fraction: $0.fractionCompleted) }
                     )
-                case .parakeet:
+                case .speech(.parakeet):
                     _ = try await AsrModels.download(
                         to: Self.parakeetFolder,
                         progressHandler: { sink.report(fraction: $0.fractionCompleted) }
                     )
+                case .diarizer:
+                    // У офлайнового диаризатора скачивание и загрузка — один
+                    // вызов; загруженные модели тут не нужны, их возьмёт прогрев.
+                    _ = try await OfflineDiarizerModels.load(
+                        from: Self.diarizerFolder,
+                        progressHandler: { sink.report(fraction: $0.fractionCompleted) }
+                    )
                 }
                 try Task.checkCancellation()
-                self?.finishDownload(model)
+                self?.finishDownload(asset)
             } catch {
                 // SDK может обернуть отмену в свою ошибку — ловим оба вида.
                 if error is CancellationError || Task.isCancelled {
-                    self?.cleanupAfterCancel(model)
+                    self?.cleanupAfterCancel(asset)
                 } else {
-                    NSLog("DOKA: скачивание модели \(model.rawValue) не удалось: \(error.localizedDescription)")
-                    Self.removePartial(model)
-                    self?.states[model] = .failed(error.localizedDescription)
+                    NSLog("DOKA: скачивание \(asset.logName) не удалось: \(error.localizedDescription)")
+                    Self.removePartial(asset)
+                    self?.states[asset] = .failed(error.localizedDescription)
                 }
             }
-            self?.downloadTasks[model] = nil
+            self?.downloadTasks[asset] = nil
         }
-        downloadTasks[model] = task
+        downloadTasks[asset] = task
     }
 
-    func cancelDownload(_ model: LocalModel) {
-        downloadTasks[model]?.cancel()
+    func cancelDownload(_ model: LocalModel) { cancelDownload(.speech(model)) }
+
+    func cancelDownload(_ asset: LocalAsset) {
+        downloadTasks[asset]?.cancel()
     }
 
-    private func updateProgress(_ model: LocalModel, _ fraction: Double) {
+    private func updateProgress(_ asset: LocalAsset, _ fraction: Double) {
         // Не перетираем финальные состояния запоздавшим колбэком.
-        if case .downloading = state(for: model) {
-            states[model] = .downloading(min(max(fraction, 0), 1))
+        if case .downloading = state(for: asset) {
+            states[asset] = .downloading(min(max(fraction, 0), 1))
         }
     }
 
-    private func finishDownload(_ model: LocalModel) {
-        guard Self.isOnDisk(model) else {
-            Self.removePartial(model)
-            states[model] = .failed(L("service.local.downloadIncomplete"))
+    private func finishDownload(_ asset: LocalAsset) {
+        guard Self.isOnDisk(asset) else {
+            Self.removePartial(asset)
+            states[asset] = .failed(L("service.local.downloadIncomplete"))
             return
         }
-        states[model] = .ready(readySize(model))
-        refreshSize(model)
+        states[asset] = .ready(readySize(asset))
+        refreshSize(asset)
         // Прогрев сразу после скачивания: первая CoreML-компиляция под чип
         // уходит в статус «Подготовка модели…», а не в первую диктовку.
-        Task { await LocalEngineManager.shared.prewarm(model) }
+        switch asset {
+        case .speech(let model):
+            Task { await LocalEngineManager.shared.prewarm(model) }
+        case .diarizer:
+            Task { await LocalEngineManager.shared.prewarmDiarizer() }
+        }
     }
 
-    private func cleanupAfterCancel(_ model: LocalModel) {
+    private func cleanupAfterCancel(_ asset: LocalAsset) {
         // Частично скачанные файлы убираем, чтобы не притворялись готовой моделью.
-        Self.removePartial(model)
-        knownSizes[model] = nil
-        states[model] = .notDownloaded
+        Self.removePartial(asset)
+        knownSizes[asset] = nil
+        states[asset] = .notDownloaded
     }
 
-    /// Убирает папку модели с диска: мгновенное переименование на том же томе
+    /// Убирает папку ресурса с диска: мгновенное переименование на том же томе
     /// плюс фоновое удаление — синхронное стирание многогигабайтного дерева
     /// на главном потоке замораживало бы UI ровно в момент клика.
-    private static func removePartial(_ model: LocalModel) {
+    private static func removePartial(_ asset: LocalAsset) {
         let fm = FileManager.default
-        let folder = rootFolder(for: model)
+        let folder = rootFolder(for: asset)
         guard fm.fileExists(atPath: folder.path) else { return }
         let trash = folder.deletingLastPathComponent()
             .appendingPathComponent("\(folder.lastPathComponent).deleting-\(UUID().uuidString)")
@@ -262,23 +315,32 @@ final class LocalModelStore: ObservableObject {
 
     // MARK: - Прогрев и удаление
 
-    /// Переводит модель в «Подготовка…» на время первой CoreML-компиляции
-    /// (вызывается менеджером движков), затем обратно в «Готова».
     func markPreparing(_ model: LocalModel, _ preparing: Bool) {
+        markPreparing(.speech(model), preparing)
+    }
+
+    /// Переводит ресурс в «Подготовка…» на время первой CoreML-компиляции
+    /// (вызывается менеджером движков), затем обратно в «Готова».
+    func markPreparing(_ asset: LocalAsset, _ preparing: Bool) {
         if preparing {
-            if case .ready = state(for: model) { states[model] = .preparing }
-        } else if case .preparing = state(for: model) {
+            if case .ready = state(for: asset) { states[asset] = .preparing }
+        } else if case .preparing = state(for: asset) {
             // Размер известен с прошлого `.ready` — файлы между «Готова» и
             // «Подготовка…» не менялись, пересчёт папки не нужен.
-            states[model] = .ready(readySize(model))
+            states[asset] = .ready(readySize(asset))
         }
     }
 
-    func delete(_ model: LocalModel) {
-        cancelDownload(model)
-        LocalEngineManager.shared.unloadIfCurrent(model)
-        Self.removePartial(model)
-        knownSizes[model] = nil
-        states[model] = .notDownloaded
+    func delete(_ model: LocalModel) { delete(.speech(model)) }
+
+    func delete(_ asset: LocalAsset) {
+        cancelDownload(asset)
+        switch asset {
+        case .speech(let model): LocalEngineManager.shared.unloadIfCurrent(model)
+        case .diarizer: LocalEngineManager.shared.unloadDiarizer()
+        }
+        Self.removePartial(asset)
+        knownSizes[asset] = nil
+        states[asset] = .notDownloaded
     }
 }

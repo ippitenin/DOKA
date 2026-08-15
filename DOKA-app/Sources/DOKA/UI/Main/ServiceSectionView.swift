@@ -15,9 +15,6 @@ struct ServiceSectionView: View {
     @State private var modelDraft = ""
     @State private var apiKey = ""
     @State private var status: Status = .unknown
-    /// Подтверждение удаления файлов модели с диска (алерт живёт на карточке
-    /// показанной модели — какая именно, известно из контекста карточки).
-    @State private var confirmModelDelete = false
 
     private enum Status: Equatable {
         case unknown, checking, valid, invalid(String)
@@ -134,7 +131,7 @@ struct ServiceSectionView: View {
     private func localModelCard(_ model: LocalModel) -> some View {
         SettingsCard(footer: L("service.local.offlineHint")) {
             SettingsRow(title: L("service.local.status")) {
-                modelStatusControl(model)
+                LocalAssetStatusView(asset: .speech(model))
             }
             if !LocalModel.isAppleSiliconMac {
                 CardDivider()
@@ -149,75 +146,6 @@ struct ServiceSectionView: View {
                     .padding(.vertical, 9)
             }
         }
-        .alert(L("service.local.deleteConfirmTitle"),
-               isPresented: $confirmModelDelete) {
-            Button(L("service.local.deleteModel"), role: .destructive) {
-                models.delete(model)
-            }
-            Button(L("common.cancel"), role: .cancel) {}
-        } message: {
-            Text(L("service.local.deleteConfirmText"))
-        }
-    }
-
-    @ViewBuilder
-    private func modelStatusControl(_ model: LocalModel) -> some View {
-        switch models.state(for: model) {
-        case .notDownloaded:
-            HStack(spacing: 12) {
-                Text(L("service.local.notDownloaded",
-                       Self.bytes(model.approxDownloadBytes)))
-                    .foregroundStyle(.secondary)
-                Button(L("service.local.download")) {
-                    models.download(model)
-                }
-                .dsProminentButton()
-                .disabled(model.requiresAppleSilicon && !LocalModel.isAppleSiliconMac)
-            }
-        case .downloading(let progress):
-            HStack(spacing: 12) {
-                ProgressView(value: progress)
-                    .frame(width: 150)
-                Text(progress.formatted(.percent.precision(.fractionLength(0))))
-                    .font(.callout.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                Button(L("common.cancel")) {
-                    models.cancelDownload(model)
-                }
-                .dsGlassButton()
-            }
-        case .preparing:
-            HStack(spacing: 8) {
-                ProgressView().controlSize(.small)
-                Text(L("service.local.preparing"))
-                    .foregroundStyle(.secondary)
-            }
-        case .ready(let size):
-            HStack(spacing: 12) {
-                Label(L("service.local.ready", Self.bytes(size)),
-                      systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                Button(L("service.local.deleteModel")) {
-                    confirmModelDelete = true
-                }
-                .dsGlassButton()
-            }
-        case .failed(let message):
-            HStack(spacing: 12) {
-                Label(message, systemImage: "xmark.circle.fill")
-                    .font(.callout)
-                    .foregroundStyle(.red)
-                    .fixedSize(horizontal: false, vertical: true)
-                Button(L("service.local.download")) {
-                    models.download(model)
-                }
-                .dsProminentButton()
-            }
-        }
-    }
-
-    private static func bytes(_ count: Int64) -> String {
-        ByteCountFormatter.string(fromByteCount: count, countStyle: .file)
     }
 
     // MARK: - Пикер сервисов
