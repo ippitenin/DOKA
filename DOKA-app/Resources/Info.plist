@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>DOKA</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.pitenin.doka</string>
+	<key>CFBundleName</key>
+	<string>DOKA</string>
+	<key>CFBundleDisplayName</key>
+	<string>DOKA</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>ru</string>
+		<string>en</string>
+	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>DOKA records your voice from the microphone for speech recognition and text pasting.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>© 2026</string>
+</dict>
+</plist>

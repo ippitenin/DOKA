@@ -1,0 +1,408 @@
+/* Язык интерфейса */
+"appLanguage.system" = "Как в системе";
+
+/* Меню в меню-баре */
+"menu.startDictation" = "Начать диктовку";
+"menu.stopDictation" = "Остановить и распознать";
+"menu.pasteLast" = "Вставить последнюю транскрипцию";
+"menu.open" = "Открыть DOKA…";
+"menu.history" = "История…";
+"menu.quit" = "Завершить DOKA";
+"menu.status.idle" = "DOKA: ожидание";
+"menu.status.recording" = "DOKA: запись";
+"menu.status.transcribing" = "DOKA: распознавание";
+"menu.status.error" = "DOKA: ошибка";
+
+/* Меню «Правка» */
+"edit.menu" = "Правка";
+"edit.undo" = "Отменить";
+"edit.redo" = "Повторить";
+"edit.cut" = "Вырезать";
+"edit.copy" = "Скопировать";
+"edit.paste" = "Вставить";
+"edit.selectAll" = "Выбрать всё";
+
+/* Общие элементы */
+"common.copy" = "Скопировать";
+"common.copied" = "Скопировано";
+"common.expand" = "Развернуть";
+"common.collapse" = "Свернуть";
+"common.transcribing" = "Распознаю…";
+
+/* Ошибки */
+"error.historyEmpty" = "История пуста";
+"error.saveRecordingFailed" = "Не удалось сохранить запись";
+"error.noAPIKey" = "Не задан API-ключ — откройте настройки";
+"error.notConfigured" = "Не указан адрес сервиса распознавания";
+"error.invalidKey" = "Неверный API-ключ";
+"error.noFunds" = "Недостаточно средств на счёте сервиса распознавания";
+"error.rateLimited" = "Превышен лимит запросов, попробуйте позже";
+"error.server" = "Ошибка сервера (%ld)";
+"error.badResponse" = "Некорректный ответ сервера";
+"error.network" = "Нет соединения с сервисом распознавания";
+"error.emptyText" = "Речь не распознана";
+"error.secureInput" = "Активно защищённое поле — текст скопирован в буфер обмена";
+"error.noAccessibility" = "Нет разрешения «Универсальный доступ» — текст в буфере обмена";
+"error.noInputDevice" = "Микрофон не найден";
+"error.recordingStartFailed" = "Не удалось запустить запись";
+"error.keychainSaveFailed" = "Не удалось сохранить ключ в Связке ключей";
+"error.localModelMissing" = "Модель не скачана — скачайте её в разделе «Сервис»";
+"error.localLoadFailed" = "Не удалось загрузить модель: %@";
+"transcribe.local.modelMissing" = "Локальная модель не скачана. Скачайте её в разделе «Сервис» или выберите сетевой сервис.";
+"transcribe.local.noAudioTrack" = "В файле нет звуковой дорожки";
+
+/* Сервисы распознавания */
+"provider.builtin" = "Встроенный (рекомендуется)";
+"provider.custom" = "Свой сервис";
+"service.addCustom" = "Новый сервис…";
+"service.deleteService" = "Удалить этот сервис";
+
+/* Стили панели записи */
+"recorderStyle.classic" = "Классическая";
+"recorderStyle.mini" = "Мини";
+"recorderStyle.notch" = "Нотч";
+"recorderStyle.aurora" = "Аврора";
+"recorderStyle.studio" = "Студия";
+"recorderStyle.hidden" = "Скрытая";
+
+/* Секции главного окна */
+"section.dashboard" = "Дашборд";
+"section.general" = "Общие";
+"section.sound" = "Звук";
+"section.hotkeys" = "Клавиши";
+"section.dictionary" = "Словарь";
+"section.service" = "Сервис";
+"section.history" = "История";
+
+/* Языки распознавания */
+"lang.auto" = "Автоопределение";
+"lang.ru" = "Русский";
+"lang.en" = "Английский";
+"lang.uk" = "Украинский";
+"lang.kk" = "Казахский";
+"lang.de" = "Немецкий";
+"lang.fr" = "Французский";
+"lang.es" = "Испанский";
+"lang.it" = "Итальянский";
+"lang.pt" = "Португальский";
+"lang.zh" = "Китайский";
+"lang.ja" = "Японский";
+"lang.tr" = "Турецкий";
+
+/* Расширенные настройки */
+"general.advanced" = "Расширенные";
+"advanced.back" = "Общие";
+"advanced.appCard" = "Приложение";
+"advanced.showDock" = "Показывать иконку в Dock";
+"advanced.showDock.hint" = "Включено — DOKA видна в Dock и Cmd+Tab, пока работает. Выключено — только меню-бар.";
+"advanced.openAtLaunch" = "Открывать окно при запуске";
+"advanced.openAtLaunch.hint" = "При старте DOKA открывается это окно. Выключите для тихого запуска в меню-баре.";
+"advanced.dataFolder" = "Папка данных";
+"advanced.dataFolder.footer" = "Здесь DOKA хранит историю, статистику и аудиозаписи. API-ключи остаются в Связке ключей.";
+"advanced.revealInFinder" = "Показать в Finder";
+"advanced.changeFolder" = "Сменить папку…";
+"advanced.changeFolder.prompt" = "Выбрать";
+"advanced.resetFolder" = "Вернуть по умолчанию";
+"advanced.migrate.done.title" = "Папка перенесена";
+"advanced.migrate.done.message" = "Данные теперь в «%@». Чтобы DOKA начала использовать новую папку, нужен перезапуск.";
+"advanced.migrate.done.restart" = "Перезапустить";
+"advanced.migrate.done.later" = "Позже";
+"advanced.migrate.failed.title" = "Не удалось перенести папку";
+"advanced.migrate.error.same" = "Это уже текущая папка данных";
+"advanced.migrate.error.nested" = "Папки вложены друг в друга — выберите другое расположение";
+"advanced.migrate.error.notEmpty" = "Выбранная папка не пуста — выберите пустую или создайте новую";
+"advanced.migrate.error.copyFailed" = "Ошибка копирования: %@";
+"advanced.transcripts" = "Недавние транскрибации";
+"advanced.transcripts.retention" = "Хранить записи:";
+"advanced.transcripts.retention.help" = "Как долго записи остаются в списке «Недавние транскрибации» на странице «Транскрибация». Незавершённая задача Nexara хранится на сервере 12 часов — в этот срок DOKA доберёт результат даже после перезапуска.";
+"advanced.transcripts.footer" = "Журнал лежит в папке данных: перенос папки (карточка выше) переносит и его.";
+
+/* Меню «Окно» */
+"window.menu" = "Окно";
+"window.close" = "Закрыть";
+"window.minimize" = "Свернуть";
+
+/* Секция «Звук» */
+"sound.micCard" = "Микрофон";
+"sound.autoBoost" = "Автоматически повышать громкость микрофона";
+"sound.autoBoost.hint" = "На время записи громкость входа выставляется на максимум, после — возвращается. Работает с системным микрофоном по умолчанию.";
+"sound.silenceRemoval" = "Удалять тишину из записи";
+"sound.silenceRemoval.hint" = "Паузы вырезаются перед распознаванием: точнее, меньше галлюцинаций и быстрее на длинных записях.";
+"sound.effectsCard" = "Звуковые эффекты";
+"sound.cues" = "Звуки начала и конца записи";
+"sound.volume" = "Громкость";
+
+/* Секция «Общие» */
+"general.uiLanguage" = "Язык интерфейса:";
+"general.transcriptionLanguage" = "Язык распознавания:";
+"general.restoreClipboard" = "Восстанавливать буфер обмена после вставки";
+"general.launchAtLogin" = "Запускать при входе в систему";
+"general.recorderPanel" = "Панель записи";
+"general.restartAlert.title" = "Перезапуск DOKA";
+"general.restartAlert.message" = "Для смены языка интерфейса нужно перезапустить DOKA.";
+"general.restartAlert.now" = "Перезапустить сейчас";
+"general.restartAlert.cancel" = "Отмена";
+"general.data" = "Данные";
+"general.saveAudio" = "Сохранять аудиозаписи";
+"general.saveAudio.subtitle" = "Аудио хранится локально, чтобы прослушивать диктовки в истории";
+"general.audioRetention" = "Хранить аудио:";
+"general.clearAudio" = "Стереть всё аудио";
+"general.clearAudio.confirm.title" = "Стереть все аудиозаписи?";
+"general.clearAudio.confirm.message" = "Все сохранённые аудиодорожки истории будут удалены безвозвратно. Тексты диктовок останутся.";
+"general.clearAudio.confirm.ok" = "Стереть";
+
+/* Срок хранения аудио */
+"audioRetention.day1" = "1 день";
+"audioRetention.day3" = "3 дня";
+"audioRetention.day7" = "7 дней";
+"audioRetention.day14" = "14 дней";
+"audioRetention.day30" = "30 дней";
+"audioRetention.forever" = "Всегда";
+
+/* Срок хранения транскрибаций */
+"transcriptRetention.hours12" = "12 часов";
+"transcriptRetention.hours24" = "24 часа";
+"transcriptRetention.hours48" = "48 часов";
+"transcriptRetention.hours72" = "72 часа";
+"transcriptRetention.forever" = "Всегда";
+
+/* Секция «Главная» */
+"home.ready.title" = "DOKA готова к диктовке";
+"home.ready.subtitle" = "Нажмите сочетание в любом приложении, говорите,\nнажмите ещё раз — текст вставится сам.";
+"home.lastTranscription" = "Последняя транскрипция";
+"home.welcome.title" = "Добро пожаловать в DOKA";
+"home.welcome.subtitle" = "Три шага — и можно диктовать в любое приложение.";
+"home.step.mic.title" = "Доступ к микрофону";
+"home.step.mic.subtitle" = "Чтобы записывать голос.";
+"home.step.ax.title" = "Универсальный доступ";
+"home.step.ax.subtitle" = "Чтобы вставлять текст в активное приложение. Включите тумблер DOKA в открывшемся списке.";
+"home.step.key.title" = "API-ключ";
+"home.step.key.placeholder" = "Ключ сервиса распознавания";
+"home.openSettings" = "Открыть настройки";
+"home.allow" = "Разрешить";
+"home.save" = "Сохранить";
+"home.checkingKey" = "Проверяю ключ…";
+"home.keySaved" = "Ключ сохранён.";
+"home.noShortcut" = "Сочетание не задано — настройте в разделе «Клавиши»";
+
+/* Секция «Клавиши» */
+"hotkeys.toggle" = "Начать/остановить диктовку:";
+"hotkeys.pasteLast" = "Вставить последнюю транскрипцию:";
+"hotkeys.escHint" = "Отмена записи — Esc (работает во время записи и распознавания).";
+"hotkeys.card.dictation" = "Диктовка";
+"hotkeys.card.window" = "Окно";
+"hotkeys.pushToTalk" = "Push-to-talk:";
+"hotkeys.pushToTalk.hint" = "Зажмите сочетание — идёт запись; отпустите — распознавание и вставка.";
+"hotkeys.mouseButton" = "Кнопка мыши:";
+"hotkeys.mouseButton.hint" = "Боковая кнопка мыши запускает и останавливает диктовку — удобно для MX Master и подобных мышей.";
+"hotkeys.mouseButton.assign" = "Добавить";
+"hotkeys.mouseButton.listening" = "Нажмите кнопку…";
+"hotkeys.mouseButton.assigned" = "Кнопка %d";
+"hotkeys.mouseButton.clear" = "Сбросить";
+"hotkeys.openMain" = "Открыть DOKA:";
+"hotkeys.openHistory" = "Открыть историю:";
+"hotkeys.window.footer" = "Эти сочетания глобальные и показываются рядом с пунктами меню-бара.";
+
+/* Секция «Словарь» */
+"dictionary.subtitle" = "Замены применяются к распознанному тексту перед вставкой.";
+"dictionary.empty" = "Правил пока нет. Добавьте замену кнопкой «+» — например, «дока» → «DOKA».";
+"dictionary.from" = "Что заменить";
+"dictionary.to" = "На что";
+
+/* Секция «Сервис» */
+"service.provider" = "Сервис распознавания:";
+"service.endpoint" = "Адрес API:";
+"service.model" = "Модель:";
+"service.customHint" = "Любой OpenAI-совместимый сервис транскрипции.";
+"service.apiKey" = "API-ключ:";
+"service.checkAndSave" = "Проверить и сохранить";
+"service.keyWorks" = "Ключ работает";
+"service.local.status" = "Модель:";
+"service.local.notDownloaded" = "Не скачана · ~%@";
+"service.local.download" = "Скачать";
+"service.local.preparing" = "Подготовка модели…";
+"service.local.ready" = "Скачана · %@";
+"service.local.deleteModel" = "Удалить модель";
+"service.local.deleteConfirmTitle" = "Удалить модель?";
+"service.local.deleteConfirmText" = "Файлы модели будут удалены с диска. Их можно скачать заново в любой момент.";
+"service.local.offlineHint" = "Распознавание идёт целиком на этом Mac: без интернета, без ключа и без оплаты. Модель скачивается один раз.";
+"service.local.intelSlow" = "На Mac с процессором Intel нет нейродвижка — распознавание будет в разы медленнее. Рекомендуем сетевой сервис.";
+"service.local.intelUnsupported" = "Parakeet работает только на Apple Silicon (M1 и новее) — на Intel эта модель недоступна.";
+"service.local.downloadIncomplete" = "Скачивание не завершилось — попробуйте ещё раз";
+
+/* Секция «История» */
+"history.search" = "Поиск";
+"history.clear" = "Очистить историю";
+"history.empty" = "История пуста — продиктуйте что-нибудь.";
+"history.notFound" = "Ничего не найдено.";
+"history.duration" = "%.1f с";
+"history.delete" = "Удалить";
+"history.select" = "Выбрать";
+"history.expand" = "Развернуть";
+"history.collapse" = "Свернуть";
+"history.info" = "Детали записи";
+"history.saveTxt" = "Сохранить .txt";
+"history.unit.seconds" = "с";
+"history.clearAll.title" = "Очистить историю?";
+"history.clearAll.message" = "Удалить все записи (%ld) безвозвратно?";
+"history.deleteOne.title" = "Удалить запись?";
+"history.deleteOne.message" = "Запись будет удалена безвозвратно.";
+"history.multi.count" = "Выбрано: %ld";
+"history.multi.selectAll" = "Выбрать всё";
+"history.multi.deselectAll" = "Снять выделение";
+"history.multi.delete" = "Удалить";
+"history.multi.export" = "Экспорт";
+"history.multi.analyze" = "Анализ";
+"history.multi.deleteConfirm.title" = "Удалить выбранные?";
+"history.multi.deleteConfirm.message" = "Удалить выбранные записи (%ld) безвозвратно?";
+"history.export.csv" = "Экспорт в CSV";
+"history.export.txt" = "Объединённый .txt";
+"history.inspector.title" = "Детали записи";
+"history.inspector.dateTime" = "Дата и время";
+"history.inspector.language" = "Язык";
+"history.inspector.microphone" = "Микрофон";
+"history.inspector.model" = "Модель";
+"history.inspector.provider" = "Провайдер";
+"history.inspector.showInFinder" = "Показать в Finder";
+
+/* Панель записи */
+"recorder.escHint" = "Esc — отмена";
+
+
+/* Группы сайдбара */
+"sidebar.group.dictation" = "Диктовка";
+"sidebar.group.settings" = "Настройки";
+
+/* DOKA */
+"section.doka" = "DOKA";
+
+/* Секция «Дашборд» */
+"dashboard.empty" = "Продиктуйте что-нибудь — здесь появится статистика.";
+"dashboard.hero.faster" = "Ты в %@× быстрее с DOKA";
+"dashboard.hero.saved" = "Сэкономлено %@";
+"dashboard.hero.callout.title" = "Узнай, насколько ты быстрее";
+"dashboard.hero.callout.subtitle" = "Пройди короткий тест скорости печати — DOKA покажет твой множитель и сэкономленное время.";
+"dashboard.metric.words" = "Всего слов";
+"dashboard.metric.sessions" = "Сессий";
+"dashboard.metric.speechWPM" = "Скорость речи";
+"dashboard.metric.avgWords" = "Слов за сессию";
+"dashboard.metric.totalTime" = "Время диктовки";
+"dashboard.metric.typingTime" = "Печатал бы";
+"dashboard.metric.typingLocked" = "Пройди тест печати";
+"dashboard.unit.wpm" = "сл/мин";
+"dashboard.trend.title" = "Слова за 30 дней";
+"dashboard.trend.start" = "30 дней назад";
+"dashboard.trend.today" = "Сегодня";
+"dashboard.trend.words" = "%ld сл";
+"dashboard.test.run" = "Тест скорости печати";
+"dashboard.test.retake" = "Пройти тест заново";
+"dashboard.test.lastResult" = "Прошлый результат: %ld сл/мин";
+"dashboard.test.shuffle" = "Другая фраза";
+"dashboard.test.counter" = "%ld из %ld";
+"dashboard.test.title" = "Тест скорости печати";
+"dashboard.test.prompt" = "Напечатайте фразу как можно быстрее";
+"dashboard.test.result" = "Ваша скорость: %ld сл/мин";
+
+/* Общее (продолжение) */
+"common.done" = "Готово";
+"common.cancel" = "Отмена";
+"common.ok" = "ОК";
+"common.close" = "Закрыть";
+
+/* Секция «Транскрибация» */
+"section.transcribeAudio" = "Транскрибация";
+"transcribe.dropHint" = "Перетащите сюда аудио или видеофайл";
+"transcribe.choose" = "Выбрать файл…";
+"transcribe.remove" = "Убрать файл";
+"transcribe.diarize" = "Определять спикеров (диаризация)";
+"transcribe.diarize.help" = "Разделяет запись по говорящим. Тарифицируется дополнительно; минимальная длительность аудио — 3 секунды.\n\n«Спикеры» — подсказка, сколько человек говорит в записи: заметно повышает качество разделения, хотя точное число не гарантирует.\n«Тип записи» — характер аудио; для звонков и записей с частыми перебиваниями (в том числе Zoom-созвонов) выбирайте «Телефонный звонок».\n«Роли» — вместо «Спикер 1» говорящих подпишут осмысленными ролями: «Авто» подберёт их по содержанию разговора, «Свои роли» — имена через запятую (до 10, каждое до 64 символов), лишние говорящие — «Неизвестный». Роли тарифицируются дополнительно.";
+"transcribe.numSpeakers" = "Спикеры";
+"transcribe.numSpeakers.auto" = "Авто";
+"transcribe.diarizeSetting" = "Тип записи";
+"transcribe.diarizeSetting.general" = "Стандартная";
+"transcribe.diarizeSetting.telephonic" = "Телефонный звонок";
+"transcribe.roles" = "Роли";
+"transcribe.roles.off" = "Выкл";
+"transcribe.roles.auto" = "Авто";
+"transcribe.roles.custom" = "Свои роли";
+"transcribe.roles.placeholder" = "Клиент, Агент";
+"transcribe.roles.error.empty" = "Укажите хотя бы одну роль";
+"transcribe.roles.error.tooMany" = "Не больше 10 ролей (сейчас %d)";
+"transcribe.roles.error.nameTooLong" = "Роль «%@» длиннее 64 символов";
+"transcribe.roles.error.duplicate" = "Роль «%@» повторяется";
+"transcribe.speaker.unknownName" = "Неизвестный %d";
+"transcribe.llm" = "Анализ ИИ:";
+"transcribe.llm.help" = "Языковая модель обработает расшифровку прямо в этом же запросе: протокол встречи, краткое резюме, список задач — либо свой запрос. Оплачивается дополнительно по токенам. Работает только с сервисом Nexara.";
+"transcribe.llm.preset.off" = "Выкл";
+"transcribe.llm.preset.meetingMinutes" = "Протокол встречи";
+"transcribe.llm.preset.summary" = "Краткое резюме";
+"transcribe.llm.preset.actionItems" = "Список задач";
+"transcribe.llm.preset.custom" = "Свой запрос";
+"transcribe.llm.customPlaceholder" = "Что сделать с расшифровкой…";
+"transcribe.llm.prompt.meetingMinutes" = "Составь протокол встречи по расшифровке: участники, обсуждённые темы, принятые решения и следующие шаги с ответственными, если они названы. Оформи разделами с заголовками. Отвечай на русском.";
+"transcribe.llm.prompt.summary" = "Сделай краткое резюме разговора в 3–5 предложениях: суть, ключевые моменты, итог. Отвечай на русском.";
+"transcribe.llm.prompt.actionItems" = "Выпиши из разговора все задачи и договорённости: что сделать, кто ответственный и срок, если они названы. Каждая задача — отдельным пунктом списка. Отвечай на русском.";
+"transcribe.llm.result.title" = "Анализ";
+"transcribe.language" = "Язык:";
+"transcribe.detail" = "Детализация тайм-кодов:";
+"transcribe.detail.server" = "Как отдаёт сервер";
+"transcribe.detail.coarse" = "Крупно (~60 с)";
+"transcribe.detail.medium" = "Средне (~30 с)";
+"transcribe.detail.fine" = "Мелко (~10 с)";
+"transcribe.detail.help" = "Насколько мелко резать текст на фрагменты с тайм-кодами. Нарезка выполняется локально по границам предложений — уровень можно менять и на готовом результате, без повторного запроса. «Как отдаёт сервер» — без нарезки: при диаризации сегменты могут длиться минутами.";
+"transcribe.run" = "Транскрибировать";
+"transcribe.inProgress" = "Распознаю файл…";
+"transcribe.cancel" = "Отменить";
+"transcribe.result.title" = "Транскрибация";
+"transcribe.save" = "Сохранить как…";
+"transcribe.speaker.unknown" = "Спикер";
+"transcribe.speaker.name" = "Спикер %d";
+"transcribe.copyFormat" = "Формат копирования:";
+"transcribe.format.plain" = "Чистый текст";
+"transcribe.format.timestamps" = "С тайм-кодами";
+"transcribe.format.srt" = "Субтитры SRT";
+"transcribe.format.vtt" = "Субтитры VTT";
+"transcribe.format.speakers" = "По спикерам";
+"transcribe.format.timestampsSpeakers" = "С тайм-кодами и спикерами";
+"transcribe.analysisFormat.markdown" = "Markdown";
+"transcribe.analysisFormat.plain" = "Обычный текст";
+"transcribe.supported.title" = "Поддерживаемые форматы";
+"transcribe.supported.audio" = "Аудио: WAV, MP3, M4A, FLAC, OGG, Opus, AIFF, ASF";
+"transcribe.supported.video" = "Видео: MP4, MOV, AVI, MKV";
+"transcribe.supported.size" = "Максимальный размер — 3 ГБ";
+"transcribe.error.unsupportedFormat" = "Формат «%@» не поддерживается";
+"transcribe.error.fileTooLarge" = "Файл больше 3 ГБ";
+"transcribe.error.readFailed" = "Не удалось прочитать файл";
+"transcribe.notConfigured" = "Сначала задайте API-ключ в разделе «Сервис»";
+"transcribe.recent.title" = "Недавние транскрибации";
+"transcribe.recent.help.hours" = "Записи хранятся %@, затем удаляются автоматически. Срок можно изменить в «Основные → Расширенные».";
+"transcribe.recent.help.forever" = "Записи хранятся бессрочно. Срок можно изменить в «Основные → Расширенные».";
+"transcribe.result.hide" = "Скрыть (результат останется в «Недавних»)";
+"transcribe.recent.open" = "Открыть";
+"transcribe.recent.delete" = "Удалить запись";
+"transcribe.recent.delete.title" = "Удалить запись?";
+"transcribe.recent.delete.confirm" = "Удалить";
+"transcribe.recent.status.inProgress" = "В процессе";
+"transcribe.recent.status.done" = "Готово";
+"transcribe.recent.status.error" = "Ошибка";
+"transcribe.recent.status.cancelled" = "Отменена";
+"transcribe.async.jobNotFound" = "Результат недоступен: сервер хранит его 12 часов";
+"transcribe.async.jobFailed" = "Сервер не справился с задачей: %@";
+"transcribe.async.interrupted" = "Прервано перезапуском приложения";
+
+/* Анализ производительности */
+"perf.title" = "Анализ производительности";
+"perf.tile.total" = "Всего записей";
+"perf.tile.analyzable" = "Анализируемых";
+"perf.tile.words" = "Всего слов";
+"perf.system.title" = "Система";
+"perf.system.device" = "Устройство";
+"perf.system.processor" = "Процессор";
+"perf.system.memory" = "Память";
+"perf.models.title" = "Модели распознавания";
+"perf.providers.title" = "По провайдерам";
+"perf.group.transcripts" = "записей: %ld";
+"perf.group.faster" = "быстрее реального времени";
+"perf.group.avgAudio" = "Ср. аудио";
+"perf.group.avgProcess" = "Ср. обработка";
+"perf.empty" = "Пока нет анализируемых записей.";

@@ -1,0 +1,487 @@
+import AppKit
+import Foundation
+import ServiceManagement
+
+/// Языки транскрипции, поддерживаемые в настройках.
+struct TranscriptionLanguage: Identifiable, Equatable {
+    let id: String      // ISO-639-1 код или "auto"
+    let title: String
+
+    static let all: [TranscriptionLanguage] = [
+        .init(id: "auto", title: L("lang.auto")),
+        .init(id: "ru", title: L("lang.ru")),
+        .init(id: "en", title: L("lang.en")),
+        .init(id: "uk", title: L("lang.uk")),
+        .init(id: "kk", title: L("lang.kk")),
+        .init(id: "de", title: L("lang.de")),
+        .init(id: "fr", title: L("lang.fr")),
+        .init(id: "es", title: L("lang.es")),
+        .init(id: "it", title: L("lang.it")),
+        .init(id: "pt", title: L("lang.pt")),
+        .init(id: "zh", title: L("lang.zh")),
+        .init(id: "ja", title: L("lang.ja")),
+        .init(id: "tr", title: L("lang.tr"))
+    ]
+}
+
+/// Стиль плавающей панели записи.
+enum RecorderStyle: String, CaseIterable, Identifiable {
+    case aurora    // светящаяся плашка + волна, подсветка краёв всего экрана
+    case studio    // широкая волна-спектр внизу экрана: таймер по центру, esc снизу
+    case classic   // крупная: точка, волна, таймер, подсказка Esc
+    case mini      // компактная пилюля: точка и волна
+    case notch     // чёрная плашка, прирастающая к вырезу камеры
+    case hidden    // панель не показывается (кроме ошибок)
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .classic: return L("recorderStyle.classic")
+        case .mini: return L("recorderStyle.mini")
+        case .notch: return L("recorderStyle.notch")
+        case .aurora: return L("recorderStyle.aurora")
+        case .studio: return L("recorderStyle.studio")
+        case .hidden: return L("recorderStyle.hidden")
+        }
+    }
+}
+
+/// Язык интерфейса приложения.
+enum AppLanguage: String, CaseIterable, Identifiable {
+    case system
+    case ru
+    case en
+
+    var id: String { rawValue }
+
+    /// Названия языков — каждое на своём языке (конвенция),
+    /// локализуется только пункт «Как в системе».
+    var title: String {
+        switch self {
+        case .system: return L("appLanguage.system")
+        case .ru: return "Русский"
+        case .en: return "English"
+        }
+    }
+}
+
+/// Срок хранения аудиозаписей истории. `forever` — по времени не удалять.
+enum AudioRetention: String, CaseIterable, Identifiable {
+    case day1, day3, day7, day14, day30, forever
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .day1: return L("audioRetention.day1")
+        case .day3: return L("audioRetention.day3")
+        case .day7: return L("audioRetention.day7")
+        case .day14: return L("audioRetention.day14")
+        case .day30: return L("audioRetention.day30")
+        case .forever: return L("audioRetention.forever")
+        }
+    }
+
+    /// Срок в днях; nil — хранить всегда.
+    var days: Int? {
+        switch self {
+        case .day1: return 1
+        case .day3: return 3
+        case .day7: return 7
+        case .day14: return 14
+        case .day30: return 30
+        case .forever: return nil
+        }
+    }
+}
+
+/// Срок хранения записей «Недавних транскрибаций». В часах — короче, чем у
+/// аудио истории: дефолт 12 ч согласован со временем жизни результата
+/// async-задачи на сервере Nexara.
+enum TranscriptRetention: String, CaseIterable, Identifiable {
+    case hours12, hours24, hours48, hours72, forever
+
+    var id: String { rawValue }
+
+    var title: String { L("transcriptRetention.\(rawValue)") }
+
+    /// Срок в часах; nil — хранить всегда.
+    var hours: Int? {
+        switch self {
+        case .hours12: return 12
+        case .hours24: return 24
+        case .hours48: return 48
+        case .hours72: return 72
+        case .forever: return nil
+        }
+    }
+}
+
+/// Исполняемый маршрут активного сервиса распознавания — единственная форма
+/// ветвления «локальный/сетевой» в контроллерах (`SettingsStore.resolveRoute`).
+/// Своих редакций этого выбора (сентинелы, пары опционалов) не заводить.
+enum ServiceRoute {
+    case local(LocalModel)
+    case remote(apiKey: String, config: ProviderConfig)
+
+    /// Имя модели для метаданных истории.
+    var modelTag: String {
+        switch self {
+        case .local(let model): return model.modelName
+        case .remote(_, let config): return config.model
+        }
+    }
+}
+
+/// Настройки приложения поверх UserDefaults.
+@MainActor
+final class SettingsStore: ObservableObject {
+    static let shared = SettingsStore()
+
+    private let defaults = UserDefaults.standard
+
+    private enum Key {
+        static let language = "language"
+        static let soundsEnabled = "soundsEnabled"
+        static let restoreClipboard = "restoreClipboard"
+        static let replacements = "replacements"
+        static let onboardingCompleted = "onboardingCompleted"
+        static let provider = "provider"
+        static let customEndpoint = "customEndpoint"
+        static let customModel = "customModel"
+        static let recorderStyle = "recorderStyle"
+        static let appLanguage = "appLanguage"
+        static let typingSpeedWPM = "typingSpeedWPM"
+        static let saveAudio = "saveAudio"
+        static let audioRetention = "audioRetention"
+        static let transcriptRetention = "transcriptRetention"
+        static let micAutoBoost = "micAutoBoost"
+        static let silenceRemoval = "silenceRemoval"
+        static let soundVolume = "soundVolume"
+        static let showDockIcon = "showDockIcon"
+        static let openWindowAtLaunch = "openWindowAtLaunch"
+        static let mouseShortcutButton = "mouseShortcutButton"
+        static let customServices = "customServices"
+        static let servicesMigrated = "servicesMigrated"
+    }
+
+    @Published var language: String {
+        didSet { defaults.set(language, forKey: Key.language) }
+    }
+    @Published var soundsEnabled: Bool {
+        didSet { defaults.set(soundsEnabled, forKey: Key.soundsEnabled) }
+    }
+    /// Громкость звуковых сигналов (0…1).
+    @Published var soundVolume: Double {
+        didSet { defaults.set(soundVolume, forKey: Key.soundVolume) }
+    }
+    /// На время записи выставлять громкость системного микрофона на максимум
+    /// (и возвращать обратно после). Работает только с устройством по умолчанию.
+    @Published var micAutoBoost: Bool {
+        didSet { defaults.set(micAutoBoost, forKey: Key.micAutoBoost) }
+    }
+    /// Вырезать тишину из записи перед отправкой на распознавание.
+    /// Статистику и аудио истории не затрагивает — режется только копия для API.
+    @Published var silenceRemoval: Bool {
+        didSet { defaults.set(silenceRemoval, forKey: Key.silenceRemoval) }
+    }
+    @Published var restoreClipboard: Bool {
+        didSet { defaults.set(restoreClipboard, forKey: Key.restoreClipboard) }
+    }
+    @Published var replacements: [ReplacementRule] {
+        didSet {
+            if let data = try? JSONEncoder().encode(replacements) {
+                defaults.set(data, forKey: Key.replacements)
+            }
+        }
+    }
+    @Published var onboardingCompleted: Bool {
+        didSet { defaults.set(onboardingCompleted, forKey: Key.onboardingCompleted) }
+    }
+
+    /// Выбранный сервис распознавания: "builtin" или "custom:<uuid>" —
+    /// ссылка на пресет из `customServices`.
+    @Published var providerID: String {
+        didSet {
+            defaults.set(providerID, forKey: Key.provider)
+            // Смена сервиса: модель ушедшего локального сервиса выгружается
+            // из памяти сразу (~2 ГБ ОЗУ), не дожидаясь таймера простоя.
+            if let old = LocalModel.from(providerID: oldValue), old != selectedLocalModel {
+                LocalEngineManager.shared.unloadIfCurrent(old)
+            }
+        }
+    }
+    /// Сохранённые пользовательские сервисы (пресеты «Сервиса»).
+    @Published var customServices: [CustomService] {
+        didSet { persistCustomServices() }
+    }
+
+    /// Стиль панели записи.
+    @Published var recorderStyle: RecorderStyle {
+        didSet { defaults.set(recorderStyle.rawValue, forKey: Key.recorderStyle) }
+    }
+
+    /// Личная скорость печати (слов/мин), измеренная тестом на дашборде.
+    /// 0 — тест ещё не пройден (геро-метрики дашборда скрыты).
+    @Published var typingSpeedWPM: Double {
+        didSet { defaults.set(typingSpeedWPM, forKey: Key.typingSpeedWPM) }
+    }
+
+    /// Сохранять ли исходное аудио диктовки (m4a) для прослушивания в истории.
+    /// Выключено — аудио не кодируется (вставка быстрее) и не показывается в истории.
+    @Published var saveAudio: Bool {
+        didSet { defaults.set(saveAudio, forKey: Key.saveAudio) }
+    }
+    /// Срок хранения сохранённого аудио истории.
+    @Published var audioRetention: AudioRetention {
+        didSet { defaults.set(audioRetention.rawValue, forKey: Key.audioRetention) }
+    }
+    /// Срок хранения записей «Недавних транскрибаций».
+    @Published var transcriptRetention: TranscriptRetention {
+        didSet { defaults.set(transcriptRetention.rawValue, forKey: Key.transcriptRetention) }
+    }
+
+    /// Язык интерфейса. Применяется при следующем запуске: Foundation
+    /// читает AppleLanguages один раз на старте процесса.
+    @Published var appLanguage: AppLanguage {
+        didSet {
+            defaults.set(appLanguage.rawValue, forKey: Key.appLanguage)
+            switch appLanguage {
+            case .system:
+                defaults.removeObject(forKey: "AppleLanguages")
+            case .ru, .en:
+                defaults.set([appLanguage.rawValue], forKey: "AppleLanguages")
+            }
+        }
+    }
+
+    /// Выбранный пользовательский сервис; nil — встроенный (или пресет удалён,
+    /// тогда всё мягко откатывается к встроенному).
+    var selectedCustomService: CustomService? {
+        guard providerID.hasPrefix("custom:"),
+              let id = UUID(uuidString: String(providerID.dropFirst("custom:".count))) else {
+            return nil
+        }
+        return customServices.first { $0.id == id }
+    }
+
+    /// Выбранная локальная модель; nil — сетевой сервис.
+    var selectedLocalModel: LocalModel? {
+        LocalModel.from(providerID: providerID)
+    }
+
+    /// Активен ли локальный сервис (on-device, без сети и без ключа).
+    var isLocalService: Bool { selectedLocalModel != nil }
+
+    /// Готов ли активный сервис к работе: локальный — модель скачана,
+    /// сетевой — разбирается конфиг и сохранён ключ. Единая замена всех
+    /// guard'ов «есть ключ» — другие редакции этой проверки не заводить.
+    var isServiceReady: Bool {
+        if let local = selectedLocalModel {
+            return LocalModelStore.shared.isDownloaded(local)
+        }
+        // Конфиг — до ключа: не трогаем Keychain, когда сервис всё равно не готов.
+        return providerConfig != nil && currentAPIKey != nil
+    }
+
+    /// Исполняемый маршрут активного сервиса: локальный движок или сетевой
+    /// клиент с ключом и конфигом. Бросает `ClientError`, если сетевой сервис
+    /// не готов. Читает Keychain — не вызывать синхронно в пути запуска
+    /// (диалог подтверждения доступа заморозит приложение, см. CLAUDE.md).
+    func resolveRoute() throws -> ServiceRoute {
+        if let local = selectedLocalModel { return .local(local) }
+        guard let config = providerConfig else {
+            throw TranscriptionClient.ClientError.notConfigured
+        }
+        guard let apiKey = currentAPIKey else {
+            throw TranscriptionClient.ClientError.noAPIKey
+        }
+        return .remote(apiKey: apiKey, config: config)
+    }
+
+    /// Активная конфигурация запросов. nil — у пресета не разбирается адрес
+    /// либо выбран локальный сервис (у него нет ни эндпоинта, ни модели API).
+    var providerConfig: ProviderConfig? {
+        guard selectedLocalModel == nil else { return nil }
+        if let service = selectedCustomService {
+            guard let url = ProviderConfig.normalizeEndpoint(service.endpoint) else { return nil }
+            let model = service.model.trimmingCharacters(in: .whitespacesAndNewlines)
+            return ProviderConfig(endpoint: url,
+                                  model: model.isEmpty ? TranscriptionProvider.custom.defaultModel : model)
+        }
+        guard let url = TranscriptionProvider.builtin.endpoint else { return nil }
+        return ProviderConfig(endpoint: url, model: TranscriptionProvider.builtin.defaultModel)
+    }
+
+    /// Keychain-аккаунт ключа активного сервиса.
+    var currentKeychainAccount: String {
+        selectedCustomService?.keychainAccount ?? TranscriptionProvider.builtin.keychainAccount
+    }
+
+    /// API-ключ активного сервиса. У локального сервиса ключа нет — Keychain
+    /// намеренно не трогаем (синхронное чтение в пути запуска может заморозить
+    /// приложение диалогом подтверждения доступа).
+    var currentAPIKey: String? {
+        guard selectedLocalModel == nil else { return nil }
+        return KeychainHelper.getAPIKey(account: currentKeychainAccount)
+    }
+
+    /// Метка сервиса для записей истории: builtin остаётся rawValue
+    /// (история маппит его в локализованное название), пресет — своё имя,
+    /// локальная модель — её название (показывается как есть).
+    var providerTagForHistory: String {
+        if let local = selectedLocalModel { return local.title }
+        return selectedCustomService?.name ?? TranscriptionProvider.builtin.rawValue
+    }
+
+    /// Удаляет пресет вместе с его ключом; если он был выбран — возврат
+    /// на встроенный сервис.
+    func deleteCustomService(_ id: UUID) {
+        if let service = customServices.first(where: { $0.id == id }) {
+            KeychainHelper.deleteAPIKey(account: service.keychainAccount)
+        }
+        customServices.removeAll { $0.id == id }
+        if providerID == "custom:\(id.uuidString)" {
+            providerID = TranscriptionProvider.builtin.rawValue
+        }
+    }
+
+    private func persistCustomServices() {
+        if let data = try? JSONEncoder().encode(customServices) {
+            defaults.set(data, forKey: Key.customServices)
+        }
+    }
+
+    /// Показывать иконку приложения в Dock (и в Cmd+Tab). Применяется на лету:
+    /// прецедент побочных эффектов в didSet — appLanguage/launchAtLogin.
+    @Published var showDockIcon: Bool {
+        didSet {
+            defaults.set(showDockIcon, forKey: Key.showDockIcon)
+            NSApp.setActivationPolicy(showDockIcon ? .regular : .accessory)
+            // Смена политики роняет фокус — возвращаем его открытому окну.
+            WindowManager.shared.refocusMain()
+        }
+    }
+    /// Открывать главное окно при запуске приложения (иначе тихий старт
+    /// в меню-баре, и факт запуска легко не заметить).
+    @Published var openWindowAtLaunch: Bool {
+        didSet { defaults.set(openWindowAtLaunch, forKey: Key.openWindowAtLaunch) }
+    }
+    /// Номер кнопки мыши для старта/остановки диктовки (NSEvent.buttonNumber,
+    /// боковые кнопки — 3/4 и далее). −1 — не назначена.
+    @Published var mouseShortcutButton: Int {
+        didSet { defaults.set(mouseShortcutButton, forKey: Key.mouseShortcutButton) }
+    }
+
+    /// Автозапуск при входе через SMAppService.
+    @Published var launchAtLogin: Bool {
+        didSet {
+            guard launchAtLogin != (SMAppService.mainApp.status == .enabled) else { return }
+            do {
+                if launchAtLogin {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
+            } catch {
+                NSLog("DOKA: не удалось изменить автозапуск: \(error.localizedDescription)")
+                launchAtLogin = SMAppService.mainApp.status == .enabled
+            }
+        }
+    }
+
+    private init() {
+        defaults.register(defaults: [
+            Key.language: "ru",
+            Key.soundsEnabled: true,
+            Key.restoreClipboard: true,
+            Key.onboardingCompleted: false,
+            Key.provider: TranscriptionProvider.builtin.rawValue,
+            Key.saveAudio: false,
+            Key.micAutoBoost: false,
+            Key.silenceRemoval: false,
+            Key.soundVolume: 1.0,
+            Key.showDockIcon: false,
+            Key.openWindowAtLaunch: true,
+            Key.mouseShortcutButton: -1
+        ])
+        language = defaults.string(forKey: Key.language) ?? "ru"
+        soundsEnabled = defaults.bool(forKey: Key.soundsEnabled)
+        soundVolume = defaults.double(forKey: Key.soundVolume)
+        micAutoBoost = defaults.bool(forKey: Key.micAutoBoost)
+        silenceRemoval = defaults.bool(forKey: Key.silenceRemoval)
+        showDockIcon = defaults.bool(forKey: Key.showDockIcon)
+        openWindowAtLaunch = defaults.bool(forKey: Key.openWindowAtLaunch)
+        mouseShortcutButton = defaults.integer(forKey: Key.mouseShortcutButton)
+        restoreClipboard = defaults.bool(forKey: Key.restoreClipboard)
+        onboardingCompleted = defaults.bool(forKey: Key.onboardingCompleted)
+        providerID = defaults.string(forKey: Key.provider) ?? TranscriptionProvider.builtin.rawValue
+        if let data = defaults.data(forKey: Key.customServices),
+           let services = try? JSONDecoder().decode([CustomService].self, from: data) {
+            customServices = services
+        } else {
+            customServices = []
+        }
+        recorderStyle = RecorderStyle(rawValue: defaults.string(forKey: Key.recorderStyle) ?? "") ?? .classic
+        appLanguage = AppLanguage(rawValue: defaults.string(forKey: Key.appLanguage) ?? "") ?? .system
+        typingSpeedWPM = defaults.double(forKey: Key.typingSpeedWPM)
+        saveAudio = defaults.bool(forKey: Key.saveAudio)
+        audioRetention = AudioRetention(rawValue: defaults.string(forKey: Key.audioRetention) ?? "") ?? .forever
+        transcriptRetention = TranscriptRetention(rawValue: defaults.string(forKey: Key.transcriptRetention) ?? "") ?? .hours12
+        if let data = defaults.data(forKey: Key.replacements),
+           let rules = try? JSONDecoder().decode([ReplacementRule].self, from: data) {
+            replacements = rules
+        } else {
+            replacements = []
+        }
+        launchAtLogin = SMAppService.mainApp.status == .enabled
+        migrateLegacyServices()
+    }
+
+    /// Одноразовый перенос прежних сервисов (openai/groq/«свой») в пресеты:
+    /// в UI остались только «Встроенный» и пользовательские, но ничей рабочий
+    /// сервис и ключ не должны пропасть. didSet в init не срабатывают —
+    /// persist здесь ручной.
+    private func migrateLegacyServices() {
+        guard !defaults.bool(forKey: Key.servicesMigrated) else { return }
+        defaults.set(true, forKey: Key.servicesMigrated)
+        switch providerID {
+        case "openai":
+            adoptLegacyService(endpoint: "https://api.openai.com/v1",
+                               model: "whisper-1", oldAccount: "api-key-openai")
+        case "groq":
+            adoptLegacyService(endpoint: "https://api.groq.com/openai/v1",
+                               model: "whisper-large-v3", oldAccount: "api-key-groq")
+        case "custom":
+            let endpoint = (defaults.string(forKey: "customEndpoint") ?? "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if endpoint.isEmpty {
+                providerID = TranscriptionProvider.builtin.rawValue
+            } else {
+                adoptLegacyService(endpoint: endpoint,
+                                   model: defaults.string(forKey: "customModel") ?? "",
+                                   oldAccount: "api-key-custom")
+            }
+        default:
+            return
+        }
+        persistCustomServices()
+        defaults.set(providerID, forKey: Key.provider)
+    }
+
+    private func adoptLegacyService(endpoint: String, model: String, oldAccount: String) {
+        let service = CustomService(
+            id: UUID(),
+            name: CustomService.makeName(endpoint: endpoint, model: model),
+            endpoint: endpoint,
+            model: model
+        )
+        customServices.append(service)
+        if let key = KeychainHelper.getAPIKey(account: oldAccount) {
+            KeychainHelper.setAPIKey(key, account: service.keychainAccount)
+            KeychainHelper.deleteAPIKey(account: oldAccount)
+        }
+        providerID = "custom:\(service.id.uuidString)"
+    }
+}

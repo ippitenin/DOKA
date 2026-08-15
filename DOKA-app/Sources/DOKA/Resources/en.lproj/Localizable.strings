@@ -1,0 +1,408 @@
+/* Interface language */
+"appLanguage.system" = "Same as system";
+
+/* Menu bar menu */
+"menu.startDictation" = "Start dictation";
+"menu.stopDictation" = "Stop and transcribe";
+"menu.pasteLast" = "Paste last transcription";
+"menu.open" = "Open DOKA…";
+"menu.history" = "History…";
+"menu.quit" = "Quit DOKA";
+"menu.status.idle" = "DOKA: idle";
+"menu.status.recording" = "DOKA: recording";
+"menu.status.transcribing" = "DOKA: transcribing";
+"menu.status.error" = "DOKA: error";
+
+/* Edit menu */
+"edit.menu" = "Edit";
+"edit.undo" = "Undo";
+"edit.redo" = "Redo";
+"edit.cut" = "Cut";
+"edit.copy" = "Copy";
+"edit.paste" = "Paste";
+"edit.selectAll" = "Select All";
+
+/* Common */
+"common.copy" = "Copy";
+"common.copied" = "Copied";
+"common.expand" = "Show more";
+"common.collapse" = "Show less";
+"common.transcribing" = "Transcribing…";
+
+/* Errors */
+"error.historyEmpty" = "History is empty";
+"error.saveRecordingFailed" = "Could not save the recording";
+"error.noAPIKey" = "API key is not set — open the settings";
+"error.notConfigured" = "Transcription service URL is not set";
+"error.invalidKey" = "Invalid API key";
+"error.noFunds" = "Insufficient funds on the transcription service account";
+"error.rateLimited" = "Request limit exceeded, try again later";
+"error.server" = "Server error (%ld)";
+"error.badResponse" = "Invalid server response";
+"error.network" = "No connection to the transcription service";
+"error.emptyText" = "No speech recognized";
+"error.secureInput" = "A secure input field is active — the text is copied to the clipboard";
+"error.noAccessibility" = "No Accessibility permission — the text is in the clipboard";
+"error.noInputDevice" = "Microphone not found";
+"error.recordingStartFailed" = "Could not start recording";
+"error.keychainSaveFailed" = "Could not save the key to the Keychain";
+"error.localModelMissing" = "The model isn’t downloaded — get it in the Service section";
+"error.localLoadFailed" = "Failed to load the model: %@";
+"transcribe.local.modelMissing" = "The local model isn’t downloaded. Get it in the Service section or choose a network service.";
+"transcribe.local.noAudioTrack" = "The file has no audio track";
+
+/* Transcription providers */
+"provider.builtin" = "Built-in (recommended)";
+"provider.custom" = "Custom service";
+"service.addCustom" = "Add custom service…";
+"service.deleteService" = "Delete this service";
+
+/* Recorder panel styles */
+"recorderStyle.classic" = "Classic";
+"recorderStyle.mini" = "Mini";
+"recorderStyle.notch" = "Notch";
+"recorderStyle.aurora" = "Aurora";
+"recorderStyle.studio" = "Studio";
+"recorderStyle.hidden" = "Hidden";
+
+/* Main window sections */
+"section.dashboard" = "Dashboard";
+"section.general" = "General";
+"section.sound" = "Sound";
+"section.hotkeys" = "Shortcuts";
+"section.dictionary" = "Dictionary";
+"section.service" = "Service";
+"section.history" = "History";
+
+/* Transcription languages */
+"lang.auto" = "Auto-detect";
+"lang.ru" = "Russian";
+"lang.en" = "English";
+"lang.uk" = "Ukrainian";
+"lang.kk" = "Kazakh";
+"lang.de" = "German";
+"lang.fr" = "French";
+"lang.es" = "Spanish";
+"lang.it" = "Italian";
+"lang.pt" = "Portuguese";
+"lang.zh" = "Chinese";
+"lang.ja" = "Japanese";
+"lang.tr" = "Turkish";
+
+/* Advanced settings */
+"general.advanced" = "Advanced";
+"advanced.back" = "General";
+"advanced.appCard" = "Application";
+"advanced.showDock" = "Show icon in Dock";
+"advanced.showDock.hint" = "On — DOKA appears in the Dock and Cmd+Tab while running. Off — menu bar only.";
+"advanced.openAtLaunch" = "Open window at launch";
+"advanced.openAtLaunch.hint" = "This window opens when DOKA starts. Turn off for a quiet menu-bar start.";
+"advanced.dataFolder" = "Data folder";
+"advanced.dataFolder.footer" = "DOKA keeps history, statistics and audio recordings here. API keys stay in the Keychain.";
+"advanced.revealInFinder" = "Reveal in Finder";
+"advanced.changeFolder" = "Change folder…";
+"advanced.changeFolder.prompt" = "Choose";
+"advanced.resetFolder" = "Reset to default";
+"advanced.migrate.done.title" = "Folder moved";
+"advanced.migrate.done.message" = "Your data now lives in “%@”. Restart DOKA to start using the new folder.";
+"advanced.migrate.done.restart" = "Restart";
+"advanced.migrate.done.later" = "Later";
+"advanced.migrate.failed.title" = "Could not move the folder";
+"advanced.migrate.error.same" = "This is already the current data folder";
+"advanced.migrate.error.nested" = "The folders are nested inside each other — choose another location";
+"advanced.migrate.error.notEmpty" = "The selected folder is not empty — pick an empty one or create a new one";
+"advanced.migrate.error.copyFailed" = "Copy failed: %@";
+"advanced.transcripts" = "Recent transcriptions";
+"advanced.transcripts.retention" = "Keep records:";
+"advanced.transcripts.retention.help" = "How long records stay in the Recent transcriptions list on the Transcription page. An unfinished Nexara job is kept on the server for 12 hours — within that window DOKA picks up the result even after a relaunch.";
+"advanced.transcripts.footer" = "The log lives in the data folder: moving the folder (card above) moves it too.";
+
+/* Window menu */
+"window.menu" = "Window";
+"window.close" = "Close";
+"window.minimize" = "Minimize";
+
+/* Sound section */
+"sound.micCard" = "Microphone";
+"sound.autoBoost" = "Automatically increase microphone volume";
+"sound.autoBoost.hint" = "Input volume is set to maximum while recording and restored afterwards. Works with the system default microphone.";
+"sound.silenceRemoval" = "Remove silence from recordings";
+"sound.silenceRemoval.hint" = "Silence is cut out before processing: better accuracy, fewer hallucinations, faster long recordings.";
+"sound.effectsCard" = "Sound Effects";
+"sound.cues" = "Recording start and stop sounds";
+"sound.volume" = "Volume";
+
+/* General section */
+"general.uiLanguage" = "Interface language:";
+"general.transcriptionLanguage" = "Transcription language:";
+"general.restoreClipboard" = "Restore the clipboard after pasting";
+"general.launchAtLogin" = "Launch at login";
+"general.recorderPanel" = "Recording panel";
+"general.restartAlert.title" = "Restart DOKA";
+"general.restartAlert.message" = "Restarting DOKA is required to change the interface language.";
+"general.restartAlert.now" = "Restart Now";
+"general.restartAlert.cancel" = "Cancel";
+"general.data" = "Data";
+"general.saveAudio" = "Save audio recordings";
+"general.saveAudio.subtitle" = "Audio is stored locally so you can play dictations back in History";
+"general.audioRetention" = "Keep audio:";
+"general.clearAudio" = "Erase all audio";
+"general.clearAudio.confirm.title" = "Erase all audio recordings?";
+"general.clearAudio.confirm.message" = "All saved history audio tracks will be deleted permanently. The dictation text will remain.";
+"general.clearAudio.confirm.ok" = "Erase";
+
+/* Audio retention */
+"audioRetention.day1" = "1 day";
+"audioRetention.day3" = "3 days";
+"audioRetention.day7" = "7 days";
+"audioRetention.day14" = "14 days";
+"audioRetention.day30" = "30 days";
+"audioRetention.forever" = "Forever";
+
+/* Transcript retention */
+"transcriptRetention.hours12" = "12 hours";
+"transcriptRetention.hours24" = "24 hours";
+"transcriptRetention.hours48" = "48 hours";
+"transcriptRetention.hours72" = "72 hours";
+"transcriptRetention.forever" = "Forever";
+
+/* Home section */
+"home.ready.title" = "DOKA is ready for dictation";
+"home.ready.subtitle" = "Press the shortcut in any app, speak,\npress again — the text will be pasted automatically.";
+"home.lastTranscription" = "Last transcription";
+"home.welcome.title" = "Welcome to DOKA";
+"home.welcome.subtitle" = "Three steps — and you can dictate into any app.";
+"home.step.mic.title" = "Microphone access";
+"home.step.mic.subtitle" = "To record your voice.";
+"home.step.ax.title" = "Accessibility";
+"home.step.ax.subtitle" = "To paste text into the active app. Turn on the DOKA switch in the list that opens.";
+"home.step.key.title" = "API key";
+"home.step.key.placeholder" = "Transcription service key";
+"home.openSettings" = "Open Settings";
+"home.allow" = "Allow";
+"home.save" = "Save";
+"home.checkingKey" = "Checking the key…";
+"home.keySaved" = "Key saved.";
+"home.noShortcut" = "No shortcut set — configure it in the Shortcuts section";
+
+/* Shortcuts section */
+"hotkeys.toggle" = "Start/stop dictation:";
+"hotkeys.pasteLast" = "Paste last transcription:";
+"hotkeys.escHint" = "Cancel recording — Esc (works while recording and transcribing).";
+"hotkeys.card.dictation" = "Dictation";
+"hotkeys.card.window" = "Window";
+"hotkeys.pushToTalk" = "Push-to-talk:";
+"hotkeys.pushToTalk.hint" = "Hold the shortcut to record; release to transcribe and paste.";
+"hotkeys.mouseButton" = "Mouse button:";
+"hotkeys.mouseButton.hint" = "A side mouse button starts and stops dictation — handy for MX Master-style mice.";
+"hotkeys.mouseButton.assign" = "Add";
+"hotkeys.mouseButton.listening" = "Press a button…";
+"hotkeys.mouseButton.assigned" = "Button %d";
+"hotkeys.mouseButton.clear" = "Clear";
+"hotkeys.openMain" = "Open DOKA:";
+"hotkeys.openHistory" = "Open history:";
+"hotkeys.window.footer" = "These shortcuts are global and shown next to the menu bar items.";
+
+/* Dictionary section */
+"dictionary.subtitle" = "Replacements are applied to the transcribed text before pasting.";
+"dictionary.empty" = "No rules yet. Add a replacement with the “+” button — for example, “doka” → “DOKA”.";
+"dictionary.from" = "Text to replace";
+"dictionary.to" = "Replacement";
+
+/* Service section */
+"service.provider" = "Transcription service:";
+"service.endpoint" = "API URL:";
+"service.model" = "Model:";
+"service.customHint" = "Any OpenAI-compatible transcription service.";
+"service.apiKey" = "API key:";
+"service.checkAndSave" = "Check and Save";
+"service.keyWorks" = "Key works";
+"service.local.status" = "Model:";
+"service.local.notDownloaded" = "Not downloaded · ~%@";
+"service.local.download" = "Download";
+"service.local.preparing" = "Preparing the model…";
+"service.local.ready" = "Downloaded · %@";
+"service.local.deleteModel" = "Delete Model";
+"service.local.deleteConfirmTitle" = "Delete the model?";
+"service.local.deleteConfirmText" = "The model files will be removed from disk. You can download them again at any time.";
+"service.local.offlineHint" = "Recognition runs entirely on this Mac: no internet, no API key, no fees. The model is downloaded once.";
+"service.local.intelSlow" = "Intel Macs have no Neural Engine — recognition will be several times slower. A network service is recommended.";
+"service.local.intelUnsupported" = "Parakeet runs only on Apple Silicon (M1 or later) — this model is unavailable on Intel.";
+"service.local.downloadIncomplete" = "The download didn’t finish — please try again";
+
+/* History section */
+"history.search" = "Search";
+"history.clear" = "Clear History";
+"history.empty" = "History is empty — dictate something.";
+"history.notFound" = "Nothing found.";
+"history.duration" = "%.1f s";
+"history.delete" = "Delete";
+"history.select" = "Select";
+"history.expand" = "Expand";
+"history.collapse" = "Collapse";
+"history.info" = "Details";
+"history.saveTxt" = "Save .txt";
+"history.unit.seconds" = "s";
+"history.clearAll.title" = "Clear history?";
+"history.clearAll.message" = "Delete all %ld records permanently?";
+"history.deleteOne.title" = "Delete record?";
+"history.deleteOne.message" = "This record will be permanently deleted.";
+"history.multi.count" = "%ld selected";
+"history.multi.selectAll" = "Select All";
+"history.multi.deselectAll" = "Deselect All";
+"history.multi.delete" = "Delete";
+"history.multi.export" = "Export";
+"history.multi.analyze" = "Analyze";
+"history.multi.deleteConfirm.title" = "Delete selected?";
+"history.multi.deleteConfirm.message" = "Delete %ld selected records permanently?";
+"history.export.csv" = "Export to CSV";
+"history.export.txt" = "Combined .txt";
+"history.inspector.title" = "Recorded details";
+"history.inspector.dateTime" = "Date & time";
+"history.inspector.language" = "Language";
+"history.inspector.microphone" = "Microphone";
+"history.inspector.model" = "Model";
+"history.inspector.provider" = "Provider";
+"history.inspector.showInFinder" = "Show in Finder";
+
+/* Recorder panel */
+"recorder.escHint" = "Esc — cancel";
+
+
+/* Группы сайдбара */
+"sidebar.group.dictation" = "Dictation";
+"sidebar.group.settings" = "Settings";
+
+/* DOKA */
+"section.doka" = "DOKA";
+
+/* Dashboard section */
+"dashboard.empty" = "Dictate something — your stats will appear here.";
+"dashboard.hero.faster" = "You are %@× faster with DOKA";
+"dashboard.hero.saved" = "Saved %@";
+"dashboard.hero.callout.title" = "See how much faster you are";
+"dashboard.hero.callout.subtitle" = "Take a quick typing speed test and DOKA will show your multiplier and time saved.";
+"dashboard.metric.words" = "Total words";
+"dashboard.metric.sessions" = "Sessions";
+"dashboard.metric.speechWPM" = "Speech speed";
+"dashboard.metric.avgWords" = "Words per session";
+"dashboard.metric.totalTime" = "Dictation time";
+"dashboard.metric.typingTime" = "You would type for";
+"dashboard.metric.typingLocked" = "Take the typing test";
+"dashboard.unit.wpm" = "wpm";
+"dashboard.trend.title" = "Words over 30 days";
+"dashboard.trend.start" = "30 days ago";
+"dashboard.trend.today" = "Today";
+"dashboard.trend.words" = "%ld words";
+"dashboard.test.run" = "Typing speed test";
+"dashboard.test.retake" = "Retake the test";
+"dashboard.test.lastResult" = "Last result: %ld wpm";
+"dashboard.test.shuffle" = "Another phrase";
+"dashboard.test.counter" = "%ld of %ld";
+"dashboard.test.title" = "Typing speed test";
+"dashboard.test.prompt" = "Type the phrase as fast as you can";
+"dashboard.test.result" = "Your speed: %ld wpm";
+
+/* Common (continued) */
+"common.done" = "Done";
+"common.cancel" = "Cancel";
+"common.ok" = "OK";
+"common.close" = "Close";
+
+/* Transcribe Audio section */
+"section.transcribeAudio" = "Transcribe Audio";
+"transcribe.dropHint" = "Drag an audio or video file here";
+"transcribe.choose" = "Choose File…";
+"transcribe.remove" = "Remove file";
+"transcribe.diarize" = "Identify speakers (diarization)";
+"transcribe.diarize.help" = "Splits the recording by speaker. Billed additionally; minimum audio length is 3 seconds.\n\n“Speakers” hints how many people speak in the recording: it noticeably improves separation quality, though the exact count is not guaranteed.\n“Recording type” describes the audio; for calls and recordings with frequent interruptions (including Zoom meetings) pick “Phone call”.\n“Roles” labels speakers with meaningful roles instead of “Speaker 1”: “Auto” infers them from the conversation, “Custom roles” takes names separated by commas (up to 10, 64 characters each); extra speakers become “Unknown”. Roles are billed additionally.";
+"transcribe.numSpeakers" = "Speakers";
+"transcribe.numSpeakers.auto" = "Auto";
+"transcribe.diarizeSetting" = "Recording type";
+"transcribe.diarizeSetting.general" = "Standard";
+"transcribe.diarizeSetting.telephonic" = "Phone call";
+"transcribe.roles" = "Roles";
+"transcribe.roles.off" = "Off";
+"transcribe.roles.auto" = "Auto";
+"transcribe.roles.custom" = "Custom roles";
+"transcribe.roles.placeholder" = "Client, Agent";
+"transcribe.roles.error.empty" = "Provide at least one role";
+"transcribe.roles.error.tooMany" = "No more than 10 roles (currently %d)";
+"transcribe.roles.error.nameTooLong" = "Role “%@” is longer than 64 characters";
+"transcribe.roles.error.duplicate" = "Role “%@” is duplicated";
+"transcribe.speaker.unknownName" = "Unknown %d";
+"transcribe.llm" = "AI analysis:";
+"transcribe.llm.help" = "A language model processes the transcript within the same request: meeting minutes, a brief summary, an action-item list — or your own prompt. Billed additionally per token. Available only with the Nexara service.";
+"transcribe.llm.preset.off" = "Off";
+"transcribe.llm.preset.meetingMinutes" = "Meeting minutes";
+"transcribe.llm.preset.summary" = "Brief summary";
+"transcribe.llm.preset.actionItems" = "Action items";
+"transcribe.llm.preset.custom" = "Custom prompt";
+"transcribe.llm.customPlaceholder" = "What to do with the transcript…";
+"transcribe.llm.prompt.meetingMinutes" = "Compose meeting minutes from the transcript: participants, topics discussed, decisions made, and next steps with owners if mentioned. Format as titled sections. Answer in English.";
+"transcribe.llm.prompt.summary" = "Summarize the conversation in 3–5 sentences: the gist, key points, the outcome. Answer in English.";
+"transcribe.llm.prompt.actionItems" = "Extract every task and agreement from the conversation: what to do, the owner and the deadline if mentioned. One list item per task. Answer in English.";
+"transcribe.llm.result.title" = "Analysis";
+"transcribe.language" = "Language:";
+"transcribe.detail" = "Timestamp detail:";
+"transcribe.detail.server" = "As returned by server";
+"transcribe.detail.coarse" = "Coarse (~60 s)";
+"transcribe.detail.medium" = "Medium (~30 s)";
+"transcribe.detail.fine" = "Fine (~10 s)";
+"transcribe.detail.help" = "How finely the text is chopped into timestamped fragments. Splitting happens locally at sentence boundaries — you can change the level on a finished result, with no extra request. “As returned by server” disables splitting: with diarization, segments may run for minutes.";
+"transcribe.run" = "Transcribe";
+"transcribe.inProgress" = "Transcribing the file…";
+"transcribe.cancel" = "Cancel";
+"transcribe.result.title" = "Transcription";
+"transcribe.save" = "Save As…";
+"transcribe.speaker.unknown" = "Speaker";
+"transcribe.speaker.name" = "Speaker %d";
+"transcribe.copyFormat" = "Copy format:";
+"transcribe.format.plain" = "Plain text";
+"transcribe.format.timestamps" = "With timestamps";
+"transcribe.format.srt" = "SRT subtitles";
+"transcribe.format.vtt" = "VTT subtitles";
+"transcribe.format.speakers" = "By speaker";
+"transcribe.format.timestampsSpeakers" = "With timestamps and speakers";
+"transcribe.analysisFormat.markdown" = "Markdown";
+"transcribe.analysisFormat.plain" = "Plain text";
+"transcribe.supported.title" = "Supported formats";
+"transcribe.supported.audio" = "Audio: WAV, MP3, M4A, FLAC, OGG, Opus, AIFF, ASF";
+"transcribe.supported.video" = "Video: MP4, MOV, AVI, MKV";
+"transcribe.supported.size" = "Maximum size — 3 GB";
+"transcribe.error.unsupportedFormat" = "Format “%@” is not supported";
+"transcribe.error.fileTooLarge" = "The file exceeds 3 GB";
+"transcribe.error.readFailed" = "Could not read the file";
+"transcribe.notConfigured" = "Set an API key in the Service section first";
+"transcribe.recent.title" = "Recent transcriptions";
+"transcribe.recent.help.hours" = "Records are kept for %@, then deleted automatically. Change the period in General → Advanced.";
+"transcribe.recent.help.forever" = "Records are kept forever. Change the period in General → Advanced.";
+"transcribe.result.hide" = "Hide (the result stays in Recents)";
+"transcribe.recent.open" = "Open";
+"transcribe.recent.delete" = "Delete record";
+"transcribe.recent.delete.title" = "Delete the record?";
+"transcribe.recent.delete.confirm" = "Delete";
+"transcribe.recent.status.inProgress" = "In progress";
+"transcribe.recent.status.done" = "Done";
+"transcribe.recent.status.error" = "Error";
+"transcribe.recent.status.cancelled" = "Cancelled";
+"transcribe.async.jobNotFound" = "Result unavailable: the server keeps it for 12 hours";
+"transcribe.async.jobFailed" = "The server failed to process the job: %@";
+"transcribe.async.interrupted" = "Interrupted by an app relaunch";
+
+/* Performance Analysis */
+"perf.title" = "Performance Analysis";
+"perf.tile.total" = "Total Transcripts";
+"perf.tile.analyzable" = "Analyzable";
+"perf.tile.words" = "Total Words";
+"perf.system.title" = "System Information";
+"perf.system.device" = "Device";
+"perf.system.processor" = "Processor";
+"perf.system.memory" = "Memory";
+"perf.models.title" = "Transcription Models";
+"perf.providers.title" = "By Provider";
+"perf.group.transcripts" = "%ld transcripts";
+"perf.group.faster" = "Faster than Real-time";
+"perf.group.avgAudio" = "Avg. audio";
+"perf.group.avgProcess" = "Avg. process time";
+"perf.empty" = "No analyzable records yet.";

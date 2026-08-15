@@ -1,0 +1,170 @@
+import SwiftUI
+
+/// Фон всего окна: behind-window-блюр + медленный mesh-дрейф поверх.
+/// При Reduce Transparency — сплошной системный цвет.
+struct AppBackground: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        if reduceTransparency {
+            Color(nsColor: .windowBackgroundColor)
+        } else {
+            ZStack {
+                VisualEffectView(material: .underWindowBackground)
+                // Насыщенный глубокий синий тинт.
+                MeshBackground()
+                    .opacity(scheme == .dark ? 0.50 : 0.38)
+                EdgeGlow()
+                EdgeRim()
+            }
+            .clipped()
+        }
+    }
+}
+
+/// Асимметричное тёплое свечение (Huly-стиль): большое персиковое пятно
+/// с горячим ядром справа-снизу и слабый отклик слева-сверху.
+private struct EdgeGlow: View {
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            ZStack {
+                // Большое мягкое пятно.
+                Circle()
+                    .fill(DS.glow)
+                    .frame(width: w * 0.95, height: w * 0.95)
+                    .position(x: w * 1.02, y: h * 1.08)
+                    .blur(radius: 130)
+                    .opacity(scheme == .dark ? 0.34 : 0.20)
+                // Горячее ядро — даёт яркость у самого угла.
+                Circle()
+                    .fill(DS.glow)
+                    .frame(width: w * 0.42, height: w * 0.42)
+                    .position(x: w * 1.04, y: h * 1.10)
+                    .blur(radius: 85)
+                    .opacity(scheme == .dark ? 0.30 : 0.16)
+                // Слабый отклик в противоположном углу.
+                Circle()
+                    .fill(DS.glow)
+                    .frame(width: w * 0.4, height: w * 0.4)
+                    .position(x: -w * 0.04, y: -h * 0.03)
+                    .blur(radius: 100)
+                    .opacity(scheme == .dark ? 0.12 : 0.08)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+/// Тонкий асимметричный rim-свет по периметру окна: ярче и толще
+/// у правого нижнего угла, едва заметный у левого верхнего.
+private struct EdgeRim: View {
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+        let boost: Double = scheme == .dark ? 1.0 : 0.55
+        ZStack {
+            // Тонкая линия по всему периметру с угловым затуханием
+            // (0° — восток, 90° — юг: максимум на юго-востоке).
+            shape
+                .strokeBorder(rimGradient(peak: 0.9 * boost), lineWidth: 1)
+                .blur(radius: 0.5)
+            // Утолщённое размытое свечение — только у юго-востока,
+            // даёт неравную толщину кромки.
+            shape
+                .strokeBorder(rimGradient(peak: 0.55 * boost, tightFalloff: true), lineWidth: 4)
+                .blur(radius: 6)
+        }
+        .padding(1)
+        .allowsHitTesting(false)
+    }
+
+    private func rimGradient(peak: Double, tightFalloff: Bool = false) -> AngularGradient {
+        let dim = tightFalloff ? 0.0 : 0.04
+        return AngularGradient(
+            gradient: Gradient(stops: [
+                .init(color: DS.glow.opacity(peak * 0.45), location: 0.0),     // восток
+                .init(color: DS.glow.opacity(peak), location: 0.125),          // юго-восток
+                .init(color: DS.glow.opacity(peak * 0.35), location: 0.25),    // юг
+                .init(color: DS.glow.opacity(dim), location: 0.45),
+                .init(color: DS.glow.opacity(dim * 0.5), location: 0.625),     // северо-запад
+                .init(color: DS.glow.opacity(dim), location: 0.8),
+                .init(color: DS.glow.opacity(peak * 0.45), location: 1.0)
+            ]),
+            center: .center
+        )
+    }
+}
+
+/// Анимированный sci-fi mesh: MeshGradient на macOS 15+,
+/// имитация из радиальных пятен на macOS 14.
+struct MeshBackground: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        if #available(macOS 15.0, *) {
+            TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: reduceMotion)) { context in
+                let t = reduceMotion ? 0 : context.date.timeIntervalSinceReferenceDate
+                MeshGradient(
+                    width: 3, height: 3,
+                    points: Self.drift(t),
+                    colors: DS.meshColors(for: scheme)
+                )
+            }
+        } else {
+            LegacyMeshImitation()
+        }
+    }
+
+    /// Дрейф точек сетки 3×3: углы закреплены, кромочные точки скользят
+    /// вдоль своей кромки, центр гуляет сильнее всех. Период ~1.5 минуты.
+    static func drift(_ t: TimeInterval) -> [SIMD2<Float>] {
+        let s = Float(sin(t * 0.07))
+        let c = Float(cos(t * 0.05))
+        return [
+            [0, 0], [0.5 + 0.08 * s, 0], [1, 0],
+            [0, 0.5 + 0.06 * c], [0.5 + 0.12 * s, 0.5 + 0.12 * c], [1, 0.5 - 0.06 * s],
+            [0, 1], [0.5 - 0.08 * c, 1], [1, 1]
+        ]
+    }
+}
+
+/// macOS 14: три радиальных пятна из палитры mesh под общим блюром.
+private struct LegacyMeshImitation: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 15.0, paused: reduceMotion)) { context in
+            let t = reduceMotion ? 0 : context.date.timeIntervalSinceReferenceDate
+            let colors = DS.meshColors(for: scheme)
+            GeometryReader { geo in
+                ZStack {
+                    colors[4]
+                    blob(colors[1], in: geo.size,
+                         x: 0.30 + 0.10 * sin(t * 0.07), y: 0.25 + 0.06 * cos(t * 0.05))
+                    blob(colors[6], in: geo.size,
+                         x: 0.20 + 0.08 * cos(t * 0.06), y: 0.80 - 0.07 * sin(t * 0.05))
+                    blob(colors[5], in: geo.size,
+                         x: 0.85 - 0.09 * sin(t * 0.05), y: 0.55 + 0.08 * cos(t * 0.07))
+                }
+                .blur(radius: 60)
+                .clipped()
+            }
+        }
+    }
+
+    private func blob(_ color: Color, in size: CGSize, x: Double, y: Double) -> some View {
+        let diameter = max(size.width, size.height) * 0.7
+        return Circle()
+            .fill(color)
+            .frame(width: diameter, height: diameter)
+            .position(x: size.width * x, y: size.height * y)
+    }
+}

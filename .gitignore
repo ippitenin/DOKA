@@ -1,0 +1,16 @@
+.build/
+.swiftpm/
+.DS_Store
+*.xcodeproj
+*.dmg
+.claude/
+
+# Локальные материалы, не входящие в публичный репозиторий
+DOCS/
+PRD_nanodeck.md
+devcockpit_prototype.html
+
+# Растровые мастера логотипа: Logo_DOKA.png побайтово совпадает
+# с DOKA-app/Resources/AppIcon.png, в репозитории хранятся векторы
+DOKA_LOGO/Logo_DOKA.png
+DOKA_LOGO/Logo_DOKA.pdf
