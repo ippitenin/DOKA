@@ -198,7 +198,6 @@
 "hotkeys.mouseButton.assign" = "Add";
 "hotkeys.mouseButton.listening" = "Press a button…";
 "hotkeys.mouseButton.assigned" = "Button %d";
-"hotkeys.mouseButton.clear" = "Clear";
 "hotkeys.openMain" = "Open DOKA:";
 "hotkeys.openHistory" = "Open history:";
 "hotkeys.window.footer" = "These shortcuts are global and shown next to the menu bar items.";
@@ -235,7 +234,6 @@
 "history.clear" = "Clear History";
 "history.empty" = "History is empty — dictate something.";
 "history.notFound" = "Nothing found.";
-"history.duration" = "%.1f s";
 "history.delete" = "Delete";
 "history.select" = "Select";
 "history.expand" = "Expand";
@@ -357,7 +355,6 @@
 "transcribe.save" = "Save As…";
 "transcribe.speaker.unknown" = "Speaker";
 "transcribe.speaker.name" = "Speaker %d";
-"transcribe.copyFormat" = "Copy format:";
 "transcribe.format.plain" = "Plain text";
 "transcribe.format.timestamps" = "With timestamps";
 "transcribe.format.srt" = "SRT subtitles";

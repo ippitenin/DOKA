@@ -36,6 +36,21 @@ deliberately postponed, so verification is manual and these four gates replace i
 3. `./build.sh` — the release build must sign successfully.
 4. A manual smoke pass over whatever you touched. `CLAUDE.md` lists what to check per area.
 
+**Gates 1 and 2 run automatically on every pull request** (`.github/workflows/build.yml`).
+Run them locally before pushing to get the answer in seconds instead of minutes:
+
+```bash
+swift build
+./scripts/check-localization.sh
+```
+
+`check-localization.sh` verifies that the Russian and English key sets match, that
+placeholders (`%@`, `%ld`, …) agree between them, that every key used via `L(...)` exists,
+and that no dead strings accumulate. If you add a key that is assembled dynamically, add
+its prefix to `DYNAMIC_PREFIXES` in the script — otherwise it will be reported as dead.
+
+Gates 3 and 4 stay manual: CI has no signing certificate and cannot click through the app.
+
 Pure logic (`ReplacementEngine`, `TranscriptFormatter`, `LightMarkdown`, and friends) is
 written to be testable and can be verified with a standalone harness that compiles the real
 sources.

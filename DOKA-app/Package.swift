@@ -13,7 +13,10 @@ let package = Package(
         // (в 1.x два executable-продукта argmax-cli/whisperkit-cli делят один
         // таргет ArgmaxCLI → «duplicate key found» при --arch arm64 --arch x86_64).
         .package(url: "https://github.com/argmaxinc/argmax-oss-swift.git", .upToNextMinor(from: "0.18.0")),
-        .package(url: "https://github.com/FluidInference/FluidAudio.git", from: "0.7.0")
+        // Линия пинится минорной по той же причине, что и WhisperKit: 0.x меняет
+        // требования к тулчейну и состав таргетов между минорами, а ломается это
+        // только на release-сборке. Смена линии — осознанная, с прогоном ./build.sh.
+        .package(url: "https://github.com/FluidInference/FluidAudio.git", .upToNextMinor(from: "0.15.5"))
     ],
     targets: [
         .executableTarget(

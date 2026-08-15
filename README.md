@@ -71,7 +71,10 @@ keys live in the macOS Keychain, never in config files.
 - macOS 14 (Sonoma) or newer.
 - Apple Silicon for the local models. Whisper runs on Intel too, but much slower; Parakeet
   requires Apple Silicon.
-- Swift 5.9+ toolchain (Xcode 15 or newer) to build from source.
+- **Xcode 26 or newer** to build from source. The package itself declares
+  `swift-tools-version: 5.9` and targets macOS 14, but one of its dependencies
+  requires Swift 6.2, and the Liquid Glass APIs need the macOS 26 SDK to compile.
+  The built app still runs on macOS 14 — this requirement applies to the build machine only.
 - An API key only if you pick a cloud service — local models need none.
 
 ## Installation
