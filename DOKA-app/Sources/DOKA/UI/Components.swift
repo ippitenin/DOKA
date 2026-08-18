@@ -136,25 +136,6 @@ struct CopyButton: View {
     }
 }
 
-/// Компактный кейкап «esc» для плашки записи (не путать с крупным `KeyCapBadge`).
-struct EscKeyCap: View {
-    var body: some View {
-        Text("esc")
-            .font(.system(size: 10, weight: .semibold, design: .rounded))
-            .foregroundStyle(.white.opacity(0.7))
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .background(
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(.white.opacity(0.12))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .strokeBorder(.white.opacity(0.18), lineWidth: 0.5)
-            )
-    }
-}
-
 /// Бэйдж клавиши для отображения сочетаний («⌥», «⇥»).
 struct KeyCapBadge: View {
     let symbol: String

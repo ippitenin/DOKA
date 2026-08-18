@@ -90,6 +90,11 @@ enum DS {
     /// (в дополнение к фирменному персику `accent`/`glow`).
     enum Aurora {
         static let indigo = Color(red: 0.55, green: 0.56, blue: 0.99)
+        /// Пересвеченное ядро волны: тёплый почти-белый (шейдер `dokaDropWave`).
+        static let waveHighlight = Color(red: 1.0, green: 0.93, blue: 0.88)
+        /// Сердцевина капель распознавания: холодный лавандовый
+        /// (шейдер `dokaDropDots`).
+        static let dotHighlight = Color(red: 0.72, green: 0.79, blue: 1.0)
         /// Градиент-подложка пилюли (сверху-слева → снизу-справа).
         static let cosmic: [Color] = [
             Color(red: 0.07, green: 0.06, blue: 0.18),

@@ -66,7 +66,12 @@ final class RecorderPanelController {
 
         // Стиль применяется лениво в момент показа: смена настройки
         // не дёргает живую панель во время записи.
-        let effective: RecorderStyle = style == .hidden ? .classic : style
+        var effective: RecorderStyle = style == .hidden ? .classic : style
+        // В капельку («Аврора» и «Мини») текст ошибки не помещается —
+        // на ошибке они, как и «Скрытая», падают на классический вид.
+        if case .error = controller.state, effective == .aurora || effective == .mini {
+            effective = .classic
+        }
         let screen = Self.screenUnderMouse()
 
         // Полноэкранная подсветка краёв: только «Аврора» и только пока идёт
@@ -102,8 +107,14 @@ final class RecorderPanelController {
             position(panel, style: effective, screen: screen)
             let target = panel.frame
             var start = target
-            // Появление: классика всплывает снизу, нотч выезжает из-под выреза.
-            start.origin.y += effective == .notch ? 8 : -10
+            // Появление: классика всплывает снизу, нотч выезжает из-под выреза,
+            // «Аврора» не съезжает вовсе — её капелька раздувается из точки
+            // внутри окна, и сдвиг рамки спорил бы с этим ростом.
+            switch effective {
+            case .notch: start.origin.y += 8
+            case .aurora, .mini: break
+            default: start.origin.y -= 10
+            }
             panel.setFrame(start, display: false)
             panel.alphaValue = 0
             panel.orderFrontRegardless()
@@ -165,9 +176,14 @@ final class RecorderPanelController {
             result.isMovableByWindowBackground = false
             return result
         }
-        if style == .aurora {
-            let size = RecorderView.panelSize(for: .aurora)
-            let view = NSHostingView(rootView: AuroraRecorderView(controller: controller, size: size))
+        // Капелька: «Аврора» — широкая и с подсветкой краёв, «Мини» — вдвое
+        // уже и без неё (подсветку поднимает show(), а не эта фабрика).
+        if style == .aurora || style == .mini {
+            let geometry: DropGeometry = style == .aurora ? .wide : .compact
+            let size = geometry.panel
+            let view = NSHostingView(rootView: DropRecorderView(
+                controller: controller, size: size, geometry: geometry
+            ))
             return RecorderPanel(contentView: view, size: size)
         }
         if style == .studio {
@@ -229,7 +245,10 @@ final class RecorderPanelController {
            let left = screen.auxiliaryTopLeftArea,
            let right = screen.auxiliaryTopRightArea {
             let notchWidth = screen.frame.width - left.width - right.width
-            let height = max(screen.safeAreaInsets.top, 32) + 4
+            // Ровно высота выреза: любая добавка свесит плашку ниже его
+            // кромки (на этом маке safeAreaInsets.top = 32, прежние +4
+            // читались как «нотч заходит на пару пикселей»).
+            let height = max(screen.safeAreaInsets.top, 32)
             let width = notchWidth + NotchRecorderView.sideWidth * 2 + 20
             return (CGSize(width: width, height: height), notchWidth)
         }
@@ -259,6 +278,14 @@ final class RecorderPanelController {
             panel.setFrameOrigin(NSPoint(
                 x: visible.midX - size.width / 2,
                 y: visible.minY + 20
+            ))
+        } else if style == .aurora || style == .mini {
+            // Отступ считается так, чтобы центр капельки остался там же, где
+            // была прежняя пилюля: окно выше самой капельки на запас под ореол.
+            let visible = screen.visibleFrame
+            panel.setFrameOrigin(NSPoint(
+                x: visible.midX - size.width / 2,
+                y: visible.minY + 80 + (54 - size.height) / 2   // центр капельки — на прежней высоте
             ))
         } else {
             let visible = screen.visibleFrame

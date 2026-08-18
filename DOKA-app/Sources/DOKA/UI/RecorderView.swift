@@ -15,10 +15,13 @@ struct RecorderView: View {
     static func panelSize(for style: RecorderStyle) -> CGSize {
         switch style {
         case .classic, .hidden: return CGSize(width: 320, height: 72)
-        case .mini: return CGSize(width: 200, height: 44)
-        // Аврора — компактная пилюля (лого · волна · таймер · esc);
-        // главное — свечение экрана.
-        case .aurora: return CGSize(width: 380, height: 54)
+        // Мини — та же капелька, что и «Аврора», но вдвое уже и без подсветки.
+        case .mini: return DropGeometry.compact.panel
+        // Аврора — капелька внутри окна с запасом: ореол и блик рисуются
+        // ВНУТРИ окна (тень AppKit обрезалась бы квадратной границей
+        // borderless-панели). Габариты — в DropGeometry. Главное в стиле —
+        // свечение краёв экрана.
+        case .aurora: return DropGeometry.wide.panel
         // Студия — компактная стеклянная плашка у нижней кромки экрана:
         // волна-спектр, таймер по центру, подпись esc снизу.
         case .studio: return CGSize(width: 460, height: 104)
@@ -32,11 +35,11 @@ struct RecorderView: View {
         let size = Self.panelSize(for: style)
         surfaced(
             content
-                .padding(.horizontal, style == .mini ? 14 : 18)
+                .padding(.horizontal, 18)
                 .frame(width: size.width, height: size.height)
         )
         .onChange(of: controller.audioLevel) { _, level in
-            smoothedLevel = smoothedLevel.smoothed(toward: level, response: 0.3)
+            smoothedLevel = smoothedLevel.envelope(toward: level)
         }
     }
 
@@ -51,49 +54,34 @@ struct RecorderView: View {
         }
     }
 
-    @ViewBuilder
     private func surfaced(_ view: some View) -> some View {
-        let tint = DS.recorderTint(for: controller.state)
-        if style == .mini {
-            view.glassCapsule(tint: tint)
-        } else {
-            view.glassSurface(radius: 24, tint: tint)
-        }
+        view.glassSurface(radius: 24, tint: DS.recorderTint(for: controller.state))
     }
 
     private var content: some View {
-        HStack(spacing: style == .mini ? 8 : 12) {
+        HStack(spacing: 12) {
             switch controller.state {
             case .recording(let startedAt):
-                if style == .mini {
-                    RecordingDot(diameter: 8)
-                    WaveformBars(level: smoothedLevel, tint: DS.RecorderTone.recording,
-                                 barCount: 9, maxHeight: 16)
-                } else {
-                    // Слева время, по центру волна, справа подсказка Esc.
-                    TimerText(startedAt: startedAt)
-                    WaveformBars(level: smoothedLevel, tint: DS.RecorderTone.recording,
-                                 barCount: 15, maxHeight: 26)
-                    Text(L("recorder.escHint"))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
+                // Слева время, по центру волна, справа подсказка Esc.
+                TimerText(startedAt: startedAt)
+                WaveformBars(level: smoothedLevel, tint: DS.RecorderTone.recording,
+                             barCount: 15, maxHeight: 26)
+                Text(L("recorder.escHint"))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             case .transcribing:
                 // «Дыхание» волны с фиксированным уровнем вместо спиннера.
                 WaveformBars(level: 0.35, tint: DS.RecorderTone.transcribing,
-                             barCount: style == .mini ? 9 : 15,
-                             maxHeight: style == .mini ? 16 : 26)
-                if style != .mini {
-                    Text(L("common.transcribing"))
-                        .font(.callout)
-                }
+                             barCount: 15, maxHeight: 26)
+                Text(L("common.transcribing"))
+                    .font(.callout)
             case .error(let message):
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(DS.RecorderTone.error)
                     .symbolEffect(.bounce, value: message)
                 Text(message)
-                    .font(style == .mini ? .caption : .callout)
-                    .lineLimit(style == .mini ? 1 : 2)
+                    .font(.callout)
+                    .lineLimit(2)
             case .idle:
                 EmptyView()
             }
@@ -153,8 +141,11 @@ struct WaveformBars: View {
         let half = Double(barCount - 1) / 2
         let x = (Double(index) - half) / half                       // −1…1
         let envelope = 1 - x * x                                    // центр выше
-        let wave = reduceMotion ? 1 : 0.5 + 0.5 * sin(time * 6 + Double(index) * 0.9)
-        return max(4, 4 + CGFloat(envelope * Double(level) * wave) * maxHeight)
+        // Колебание не опускается к нулю: иначе половина хода теряется
+        // и полоски дрожат у пола вместо того, чтобы ходить под голос.
+        let wave = reduceMotion ? 1 : 0.62 + 0.38 * sin(time * 6 + Double(index) * 0.9)
+        let drive = min(1, Double(max(level, 0)) * 1.5)
+        return max(4, 4 + CGFloat(envelope * drive * wave) * maxHeight)
     }
 }
 

@@ -10,8 +10,9 @@ of them exist because something broke once. Please read this before opening a pu
 ```bash
 git clone https://github.com/ippitenin/DOKA.git
 cd DOKA/DOKA-app
-swift build        # quick compile check
-./run.sh           # release build, sign, install to ~/Applications, launch
+swift build                # quick compile check
+scripts/build-shaders.sh   # Metal shaders of the recording panel (build.sh runs it for you)
+./run.sh                   # release build, sign, install to ~/Applications, launch
 ```
 
 `./build.sh` signs with a self-signed **“DOKA Dev”** certificate — see
@@ -31,6 +32,8 @@ needs a real Mac with real permissions, so it is verified by hand. Five gates:
 
 1. `swift build` — must finish with **no warnings**.
 2. `swift test` — all green. Add tests for any pure logic you touch.
+   Touching `Shaders/*.metal`? Run `scripts/build-shaders.sh` first: SwiftPM does not compile
+   `.metal`, and without that step the build silently keeps the previous shader.
 3. `plutil -lint` on both `Localizable.strings` files (and both `InfoPlist.strings` if you
    touched them). `swift build` does **not** validate `.strings` syntax — a broken file
    compiles fine and fails at runtime.

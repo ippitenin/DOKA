@@ -241,16 +241,11 @@ private struct StylePreviewCard: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             .padding(.bottom, 12)
         case .mini:
-            // Внизу по центру — как настоящая панель на экране.
-            HStack(spacing: 4) {
-                Circle().fill(DS.RecorderTone.recording).frame(width: 5, height: 5)
-                PreviewBars(count: 6)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .glassCapsule(forceMaterial: true)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-            .padding(.bottom, 12)
+            // Та же капелька, что у «Авроры», но вдвое уже и без свечения
+            // краёв экрана — в этом и вся разница между стилями.
+            DropPreview(size: CGSize(width: 30, height: 21))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, 12)
         case .notch:
             // Чёрная плашка нотча — приклеена к верхней кромке «мини-экрана»
             // без отступа, как настоящая бровка у кромки экрана.
@@ -284,32 +279,12 @@ private struct StylePreviewCard: View {
                 Circle().fill(DS.coral)
                     .frame(width: 46, height: 46).blur(radius: 16)
                     .opacity(0.45).offset(x: 54, y: 40)
-                // Пилюля внизу по центру — как настоящая на экране
+                // Капелька внизу по центру — как настоящая на экране
                 // (главное в стиле — свечение краёв, оно уже внизу).
-                HStack(spacing: 5) {
-                    Text("0:12")
-                        .font(.system(size: 6, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.85))
-                    AuroraWaveShape(phase: 0.6, amplitude: 0.8)
-                        .stroke(
-                            LinearGradient(
-                                colors: [DS.accent, DS.glow,
-                                         DS.Aurora.indigo],
-                                startPoint: .leading, endPoint: .trailing
-                            ),
-                            style: StrokeStyle(lineWidth: 1.6, lineCap: .round)
-                        )
-                        .frame(width: 34, height: 10)
-                }
-                .padding(.horizontal, 7)
-                .padding(.vertical, 4)
-                .background(
-                    Capsule()
-                        .fill(Color(red: 0.10, green: 0.08, blue: 0.20))
-                        .overlay(Capsule().strokeBorder(DS.glow.opacity(0.6), lineWidth: 0.5))
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                .padding(.bottom, 12)
+                // Тот же шейдер, что и в живой панели, со статичной фазой.
+                DropPreview(size: CGSize(width: 60, height: 21))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .padding(.bottom, 12)
             }
         case .studio:
             // Компактная стеклянная плашка у нижней кромки «мини-экрана» —

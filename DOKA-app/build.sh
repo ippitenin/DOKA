@@ -28,6 +28,11 @@ for arg in "$@"; do
     esac
 done
 
+# Шейдеры панели записи: SwiftPM .metal не компилирует, а build-tool-плагин
+# ломает мультиарх-сборку — поэтому metallib собирается заранее и уезжает
+# в бандл обычным ресурсом (см. scripts/build-shaders.sh).
+./scripts/build-shaders.sh
+
 echo "==> Сборка release (swift build, universal arm64 + x86_64)…"
 swift build -c release --arch arm64 --arch x86_64
 

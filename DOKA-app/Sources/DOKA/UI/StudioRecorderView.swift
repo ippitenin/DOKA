@@ -27,8 +27,8 @@ struct StudioRecorderView: View {
             // бы его квадратной границей — тёмные углы в светлой теме.
             .glassSurface(radius: 22)
             .onChange(of: controller.audioLevel) { _, level in
-                // Снапповое сглаживание — волна резко отзывается на голос.
-                smoothedLevel = smoothedLevel.smoothed(toward: level, response: 0.5)
+                // Огибающая: резкий отклик на голос, мягкое затухание.
+                smoothedLevel = smoothedLevel.envelope(toward: level)
             }
             .onChange(of: isRecording) { _, recording in
                 if !recording { smoothedLevel = 0 }

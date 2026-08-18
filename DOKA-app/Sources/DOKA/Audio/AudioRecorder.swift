@@ -28,10 +28,37 @@ final class AudioRecorder {
     private var engine: AVAudioEngine?
     private var configObserver: NSObjectProtocol?
 
-    /// Порог нормализованного уровня (0…1), выше которого буфер считается «речью».
+    /// Порог логарифмического уровня (0…1), выше которого буфер считается «речью».
     /// Тишина/фоновый шум (~−50…−40 дБ) даёт уровень ниже, реальный голос — выше.
     /// Нужен для оценки активного времени речи без пауз (статистика дашборда).
+    ///
+    /// ВАЖНО: порог живёт на СТАРОЙ dB-кривой (`speechLevel`) и не должен ехать
+    /// вслед за кривой для UI — иначе поедут «Скорость речи», сэкономленное время
+    /// и множитель на дашборде, которые считаются от накопленного `speechTime`.
     private static let speechLevelThreshold: Float = 0.2
+
+    /// Кривая уровня для панелей записи. Логарифмическая шкала (dB) сжимает
+    /// обычную речь в узкий диапазон и выглядит вяло, поэтому уровень строится
+    /// по линейным RMS и пику с узкими рабочими окнами: чуть выше шума — уже
+    /// заметное движение, гамма поднимает тихую речь.
+    private enum Level {
+        static let rmsFloor: Float = 0.009
+        static let rmsRange: Float = 0.018
+        static let peakFloor: Float = 0.024
+        static let peakRange: Float = 0.07
+        static let peakWeight: Float = 0.75
+        static let gamma: Float = 0.72
+        /// Подъём быстрый, спад медленный: голос должен «выстреливать» сразу,
+        /// а затухать плавно, иначе панель дёргается на паузах между словами.
+        static let attack: Float = 0.5
+        static let release: Float = 0.18
+
+        static func normalize(rms: Float, peak: Float) -> Float {
+            let rmsLevel = max(0, min(1, (rms - rmsFloor) / rmsRange))
+            let peakLevel = max(0, min(1, (peak - peakFloor) / peakRange))
+            return pow(max(rmsLevel, peakLevel * peakWeight), gamma)
+        }
+    }
 
     /// Состояние одной сессии записи. Доступ только на `queue`.
     private final class Session {
@@ -88,7 +115,9 @@ final class AudioRecorder {
         queue.sync { session = newSession }
 
         let queue = self.queue
-        input.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
+        // 1024 кадра — ~21 мс при 48 кГц: панели получают уровень ~47 раз в секунду.
+        // На 4096 (~85 мс) реакция на голос заметно запаздывала.
+        input.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { [weak self] buffer, _ in
             // Сессия захвачена по значению: «хвостовые» колбэки старой сессии
             // после finished=true просто отбрасываются.
             queue.async { self?.process(buffer: buffer, in: newSession) }
@@ -170,21 +199,31 @@ final class AudioRecorder {
     private func process(buffer: AVAudioPCMBuffer, in session: Session) {
         guard !session.finished else { return }
 
-        // Уровень: RMS по первому каналу исходного float-буфера.
+        // Уровень: RMS и пик по первому каналу исходного float-буфера.
         if let channel = buffer.floatChannelData?[0] {
             let frames = Int(buffer.frameLength)
             if frames > 0 {
                 var sum: Float = 0
-                for i in 0..<frames { sum += channel[i] * channel[i] }
+                var peak: Float = 0
+                for i in 0..<frames {
+                    let sample = channel[i]
+                    sum += sample * sample
+                    peak = max(peak, abs(sample))
+                }
                 let rms = sqrt(sum / Float(frames))
-                // Логарифмическое масштабирование в 0…1 и сглаживание.
+
+                // Статистика речи считается по прежней dB-кривой: её порог
+                // калиброван под неё, а lifetime-агрегаты дашборда — под порог.
                 let db = 20 * log10(max(rms, 1e-7))
-                let normalized = max(0, min(1, (db + 50) / 50))
-                // Активная речь: буфер выше порога — добавляем его реальную длительность.
-                if normalized >= Self.speechLevelThreshold {
+                let speechLevel = max(0, min(1, (db + 50) / 50))
+                if speechLevel >= Self.speechLevelThreshold {
                     session.speechTime += Double(frames) / buffer.format.sampleRate
                 }
-                session.smoothedLevel = session.smoothedLevel * 0.7 + normalized * 0.3
+
+                // Уровень для панелей — своя кривая с быстрым подъёмом.
+                let target = Level.normalize(rms: rms, peak: peak)
+                let response = target > session.smoothedLevel ? Level.attack : Level.release
+                session.smoothedLevel += (target - session.smoothedLevel) * response
                 let level = session.smoothedLevel
                 DispatchQueue.main.async { [weak self] in
                     self?.onLevel?(level)

@@ -17,3 +17,7 @@ devcockpit_prototype.html
 # с DOKA-app/Resources/AppIcon.png, в репозитории хранятся векторы
 DOKA_LOGO/Logo_DOKA.png
 DOKA_LOGO/Logo_DOKA.pdf
+
+# Скомпилированные шейдеры панели записи: генерируются из Shaders/*.metal
+# скриптом DOKA-app/scripts/build-shaders.sh (его зовёт build.sh)
+DOKA-app/Sources/DOKA/Resources/default.metallib

@@ -49,7 +49,7 @@ struct NotchRecorderView: View {
             }
         }
         .onChange(of: controller.audioLevel) { _, level in
-            smoothedLevel = smoothedLevel.smoothed(toward: level, response: 0.3)
+            smoothedLevel = smoothedLevel.envelope(toward: level)
         }
     }
 

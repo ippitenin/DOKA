@@ -11,8 +11,9 @@
 ```bash
 git clone https://github.com/ippitenin/DOKA.git
 cd DOKA/DOKA-app
-swift build        # быстрая проверка компиляции
-./run.sh           # release-сборка, подпись, установка в ~/Applications, запуск
+swift build                # быстрая проверка компиляции
+scripts/build-shaders.sh   # Metal-шейдеры панели записи (build.sh делает это сам)
+./run.sh                   # release-сборка, подпись, установка в ~/Applications, запуск
 ```
 
 `./build.sh` подписывает самоподписанным сертификатом **«DOKA Dev»** — инструкция в
@@ -32,6 +33,8 @@ swift build        # быстрая проверка компиляции
 
 1. `swift build` — должен завершаться **без предупреждений**.
 2. `swift test` — все зелёные. Трогаете чистую логику — дописывайте тесты.
+   Правите `Shaders/*.metal` — сначала `scripts/build-shaders.sh`: SwiftPM `.metal` не
+   компилирует, и без этого шага сборка молча возьмёт старый шейдер.
 3. `plutil -lint` обоих файлов `Localizable.strings` (и обоих `InfoPlist.strings`, если вы
    их трогали). `swift build` синтаксис `.strings` **не** проверяет — сломанный файл
    спокойно компилируется и падает уже в рантайме.

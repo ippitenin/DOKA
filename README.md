@@ -33,8 +33,12 @@ written in Russian.
 - **Voice dictation** — global hotkey (or push-to-talk, or a mouse button) → recording →
   transcription → dictionary replacements → text pasted into the active app through the
   clipboard and a synthetic ⌘V.
-- **Recording panel** — six styles: `aurora`, `studio`, `classic`, `mini`, `notch`
-  (a strip that grows out of the camera cutout) and `hidden`.
+- **Recording panel** — six styles. `aurora` and `mini` are a glowing droplet built on Metal
+  shaders in the spirit of Liquid Glass: the wave inside answers your voice in both amplitude
+  and speed, the glass refracts light at the rim, and while transcribing the droplet springs
+  into a ring of pulsing dots. `aurora` adds a glow along the screen edges; `mini` is the same
+  droplet, half as wide and without the glow. Plus `studio`, `classic`, `notch` (a strip that
+  grows out of the camera cutout) and `hidden`.
 - **Transcribe Audio** — drop in an audio or video file and get timestamped segments,
   subtitles (SRT/VTT) and optional speaker diarization. With the built-in service the job
   runs asynchronously: it survives network loss, sleep, and even an app restart — the
@@ -102,10 +106,15 @@ All commands run from `DOKA-app/`:
 
 ```bash
 swift build        # quick debug compile check
+scripts/build-shaders.sh   # Metal shaders of the recording panel → default.metallib
 ./build.sh         # release (universal: arm64 + x86_64), signed, installed to ~/Applications
 ./build.sh --dmg   # the same, plus DOKA.dmg in the repository root
 ./run.sh           # build.sh + launch
 ```
+
+SwiftPM does not compile `.metal`, so the recording panel's shaders are built by a separate
+script. `build.sh` runs it for you; before a bare `swift build` run it by hand — otherwise the
+app builds without the panel effects.
 
 Release builds are signed with a self-signed **“DOKA Dev”** certificate — see
 [`DOKA-app/scripts/make-dev-cert.md`](DOKA-app/scripts/make-dev-cert.md). Both the

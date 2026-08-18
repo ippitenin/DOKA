@@ -28,9 +28,11 @@ struct TranscriptionLanguage: Identifiable, Equatable {
 enum RecorderStyle: String, CaseIterable, Identifiable {
     case aurora    // светящаяся плашка + волна, подсветка краёв всего экрана
     case studio    // широкая волна-спектр внизу экрана: таймер по центру, esc снизу
-    case classic   // крупная: точка, волна, таймер, подсказка Esc
-    case mini      // компактная пилюля: точка и волна
+    // Порядок кейсов задаёт порядок карточек в пикере стилей
+    // (`RecorderStylePicker` строит сетку из allCases).
     case notch     // чёрная плашка, прирастающая к вырезу камеры
+    case mini      // капелька вдвое уже «Авроры», без подсветки экрана
+    case classic   // крупная: точка, волна, таймер, подсказка Esc
     case hidden    // панель не показывается (кроме ошибок)
 
     var id: String { rawValue }

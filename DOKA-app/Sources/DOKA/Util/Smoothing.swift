@@ -8,4 +8,12 @@ extension BinaryFloatingPoint {
     func smoothed(toward target: Self, response: Self) -> Self {
         self * (1 - response) + target * response
     }
+
+    /// Асимметричное сглаживание уровня микрофона: подъём быстрый, спад
+    /// медленный. Симметричная EMA либо съедает пики голоса, либо дёргается
+    /// на паузах между словами — панели должны «выстреливать» и мягко гаснуть.
+    /// Значения по умолчанию совпадают с огибающей в `AudioRecorder`.
+    func envelope(toward target: Self, attack: Self = 0.5, release: Self = 0.18) -> Self {
+        smoothed(toward: target, response: target > self ? attack : release)
+    }
 }
