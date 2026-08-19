@@ -36,9 +36,11 @@ written in Russian.
 - **Recording panel** — six styles. `aurora` and `mini` are a glowing droplet built on Metal
   shaders in the spirit of Liquid Glass: the wave inside answers your voice in both amplitude
   and speed, the glass refracts light at the rim, and while transcribing the droplet springs
-  into a ring of pulsing dots. `aurora` adds a glow along the screen edges; `mini` is the same
-  droplet, half as wide and without the glow. Plus `studio`, `classic`, `notch` (a strip that
-  grows out of the camera cutout) and `hidden`.
+  into a ring of pulsing dots. `aurora` is the wide warm droplet with a halo and a soft glow
+  along the bottom edge of the screen; `mini` is half as wide, painted in a cold palette (ice,
+  turquoise, blue-violet) and wearing a live rim: the light of the wave bleeds onto the
+  outline, runs along it in tides and splits into chromatic aberration. Plus `studio`,
+  `classic`, `notch` (a strip that grows out of the camera cutout) and `hidden`.
 - **Transcribe Audio** — drop in an audio or video file and get timestamped segments,
   subtitles (SRT/VTT) and optional speaker diarization. With the built-in service the job
   runs asynchronously: it survives network loss, sleep, and even an app restart — the
