@@ -243,7 +243,7 @@ private struct StylePreviewCard: View {
         case .mini:
             // Та же капелька, что у «Авроры», но вдвое уже и без свечения
             // краёв экрана — в этом и вся разница между стилями.
-            DropPreview(size: CGSize(width: 30, height: 21))
+            DropPreview(size: CGSize(width: 30, height: 21), look: .mini)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .padding(.bottom, 12)
         case .notch:
@@ -282,7 +282,7 @@ private struct StylePreviewCard: View {
                 // Капелька внизу по центру — как настоящая на экране
                 // (главное в стиле — свечение краёв, оно уже внизу).
                 // Тот же шейдер, что и в живой панели, со статичной фазой.
-                DropPreview(size: CGSize(width: 60, height: 21))
+                DropPreview(size: CGSize(width: 60, height: 15), look: .aurora)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                     .padding(.bottom, 12)
             }

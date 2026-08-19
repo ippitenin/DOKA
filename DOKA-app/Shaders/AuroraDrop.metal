@@ -262,13 +262,24 @@ inline float capsuleSDF(float2 pos, float2 size, thread float2 &normal) {
 /// «заламывается», как в толстом стекле), по самому краю идёт светящийся блик
 /// с угловым градиентом. Вне капсулы — прозрачность.
 ///
+/// Кромка умеет быть ЖИВОЙ (стиль «Мини»): свет волны вытекает на обводку,
+/// бежит по ней приливами и расщепляется хроматической аберрацией — «Аврора»
+/// передаёт `bleed/tide/aberration` нулями и получает прежний ровный блик,
+/// поэтому отдельной функции для неё не нужно.
+///
 /// - Parameters:
 ///   - refract: сила преломления в точках (сдвиг сэмпла у кромки);
-///   - rimAmount: яркость блика; rimWidth — его ширина в точках.
+///   - rimAmount: яркость блика; rimWidth — его ширина в точках;
+///   - phase: фаза бега волны (та же, что у `dokaDropWave` — приливы
+///     ускоряются под голос вместе с ней);
+///   - bleed: 0…1 — насколько кромка подчиняется содержимому под ней;
+///   - tide: 0…1 — глубина приливов вдоль кромки;
+///   - aberration: доля от `refract` на расхождение каналов R/B.
 [[ stitchable ]] half4 dokaDropGlass(
     float2 position, SwiftUI::Layer layer,
     float2 size, float refract, float rimAmount, float rimWidth,
-    half3 rimTop, half3 rimBottom)
+    half3 rimTop, half3 rimBottom,
+    float phase, float bleed, float tide, float aberration)
 {
     using namespace doka;
 
@@ -279,7 +290,16 @@ inline float capsuleSDF(float2 pos, float2 size, thread float2 &normal) {
     // Толщина «стекла» растёт к краю — там же сильнее преломление.
     float t = sat(1.0f + sdf / r);
     float bend = pow(t, 2.6f);
-    half4 sample = layer.sample(position - normal * (bend * refract));
+    float depth = bend * refract;
+
+    // Хроматическая аберрация: красный преломляется слабее синего, у кромки
+    // свет расщепляется. При aberration = 0 все три сэмпла совпадают.
+    float ab = sat(aberration);
+    half4 sG = layer.sample(position - normal * depth);
+    half4 sR = layer.sample(position - normal * (depth * (1.0f - ab)));
+    half4 sB = layer.sample(position - normal * (depth * (1.0f + ab)));
+    float3 sampleRGB = float3(sR.r, sG.g, sB.b);
+    float sampleA = max(float(sG.a), max(float(sR.a), float(sB.a)));
 
     // Блик по кромке: узкая полоса вокруг sdf ≈ 0, цвет — по вертикали.
     float band = exp(-pow(sdf / max(rimWidth, 0.5f), 2.0f));
@@ -287,14 +307,37 @@ inline float capsuleSDF(float2 pos, float2 size, thread float2 &normal) {
     float vertical = sat(d.y / r * 0.5f + 0.5f);
     float3 rim = mix(float3(rimTop), float3(rimBottom), vertical);
 
+    // Что светится ПОД кромкой: сэмпл заметно глубже преломлённого — именно
+    // он даёт «волна забежала на обводку».
+    float bleedDepth = rimWidth * 2.0f + refract * 1.5f;
+    half4 inner = layer.sample(position - normal * bleedDepth);
+    float3 innerRGB = float3(inner.rgb);
+    float lit = max(max(innerRGB.r, innerRGB.g), innerRGB.b) * float(inner.a);
+
+    // Приливы вдоль кромки. Параметр — в полувысотах, а не долях ширины:
+    // при стягивании капсулы в круг узор укорачивается, но не сжимается.
+    float along = d.x / r;
+    float side = (d.y >= 0.0f) ? 1.0f : -1.0f;      // верх и низ бегут навстречу
+    float fast = 0.5f + 0.5f * sin(along * 2.6f * side - phase * 0.55f);
+    float slow = 0.5f + 0.5f * sin(along * 1.1f + phase * 0.31f * side);
+    float tideWave = 0.6f * fast + 0.4f * slow;
+    float tideFactor = mix(1.0f - sat(tide), 1.0f, tideWave);
+
     // Мягкая граница: жёсткий step дал бы рваный край на Retina.
     float inside = 1.0f - smoothstep(-1.0f, 0.5f, sdf);
-    float rimEnergy = band * rimAmount * inside;
+    float dynamic = mix(1.0f, (0.30f + 1.5f * lit) * tideFactor, sat(bleed));
+    float rimEnergy = band * rimAmount * inside * dynamic;
 
-    float3 col = float3(sample.rgb) + rim * rimEnergy;
+    // Оттенок кромки подхватывается у содержимого: пик волны у края красит
+    // обводку в свой цвет, а не в фиксированный токен.
+    float tintMix = sat(bleed) * smoothstep(0.05f, 0.6f, lit);
+    float3 innerTint = innerRGB / max(max(max(innerRGB.r, innerRGB.g), innerRGB.b), 0.0001f);
+    rim = mix(rim, innerTint, tintMix);
+
+    float3 col = sampleRGB + rim * rimEnergy;
     float peak = max(max(col.r, col.g), col.b);
     col *= (peak > 1.0f) ? (1.0f / peak) : 1.0f;
 
-    float alpha = max(float(sample.a), rimEnergy) * inside;
+    float alpha = max(sampleA, rimEnergy) * inside;
     return half4(half3(col), half(alpha));
 }
