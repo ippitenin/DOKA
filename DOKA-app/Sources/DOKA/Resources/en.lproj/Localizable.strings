@@ -176,7 +176,11 @@
 "home.step.mic.subtitle" = "To record your voice.";
 "home.step.ax.title" = "Accessibility";
 "home.step.ax.subtitle" = "To paste text into the active app. Turn on the DOKA switch in the list that opens.";
-"home.step.key.title" = "API key";
+"home.step.service.title" = "Recognition service";
+"home.step.service.help" = "A local model works without internet and keeps all data on your computer. It can occasionally make mistakes, though. A cloud service is more accurate, but it needs an activation key.";
+"home.service.cloud.title" = "Cloud service";
+"home.service.cloud.caption" = "Key required";
+"home.service.local.caption" = "~%@ · offline, no key";
 "home.step.key.placeholder" = "Transcription service key";
 "home.openSettings" = "Open Settings";
 "home.allow" = "Allow";
@@ -221,6 +225,8 @@
 "service.local.download" = "Download";
 "service.local.preparing" = "Preparing the model…";
 "service.local.ready" = "Downloaded · %@";
+"service.local.namedApprox" = "%@ · ~%@";
+"service.local.namedReady" = "%@ · %@";
 "service.local.deleteModel" = "Delete Model";
 "service.local.deleteConfirmTitle" = "Delete the model?";
 "service.local.deleteConfirmText" = "The model files will be removed from disk. You can download them again at any time.";

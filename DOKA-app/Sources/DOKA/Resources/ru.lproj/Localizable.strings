@@ -176,7 +176,11 @@
 "home.step.mic.subtitle" = "Чтобы записывать голос.";
 "home.step.ax.title" = "Универсальный доступ";
 "home.step.ax.subtitle" = "Чтобы вставлять текст в активное приложение. Включите тумблер DOKA в открывшемся списке.";
-"home.step.key.title" = "API-ключ";
+"home.step.service.title" = "Сервис распознавания";
+"home.step.service.help" = "Локальная модель работает без интернета и хранит данные только на компьютере. Но изредка может допускать ошибки. Облачный сервис более точный, но нужен ключ активации.";
+"home.service.cloud.title" = "Облачный сервис";
+"home.service.cloud.caption" = "Нужен ключ";
+"home.service.local.caption" = "~%@ · офлайн, без ключа";
 "home.step.key.placeholder" = "Ключ сервиса распознавания";
 "home.openSettings" = "Открыть настройки";
 "home.allow" = "Разрешить";
@@ -221,6 +225,8 @@
 "service.local.download" = "Скачать";
 "service.local.preparing" = "Подготовка модели…";
 "service.local.ready" = "Скачана · %@";
+"service.local.namedApprox" = "%@ · ~%@";
+"service.local.namedReady" = "%@ · %@";
 "service.local.deleteModel" = "Удалить модель";
 "service.local.deleteConfirmTitle" = "Удалить модель?";
 "service.local.deleteConfirmText" = "Файлы модели будут удалены с диска. Их можно скачать заново в любой момент.";

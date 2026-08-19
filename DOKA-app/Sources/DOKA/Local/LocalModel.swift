@@ -12,14 +12,33 @@ enum LocalModel: String, CaseIterable, Identifiable {
     /// Значение для `SettingsStore.providerID`.
     var providerID: String { "local:\(rawValue)" }
 
+    /// Имя модели без пометки «(Local)» — там, где локальность уже понятна из
+    /// контекста: строка статуса скачивания на онбординге. Не локализуется по
+    /// той же причине, что и `title`.
+    var plainTitle: String {
+        switch self {
+        case .whisper: return "Whisper Large v3 Turbo"
+        case .parakeet: return "Parakeet TDT 0.6B v3"
+        }
+    }
+
     /// Название в UI и метка сервиса в истории. Намеренно не локализуется
     /// (как `AppLanguage.title`): имя собственное, одинаково на всех языках.
     /// Соответствует фактическим моделям: у Whisper вариант large-v3-turbo,
     /// у Parakeet — TDT 0.6B v3 (без «Turbo» — его у NVIDIA нет).
-    var title: String {
+    /// Выводится из `plainTitle`, чтобы два имени не разъехались; строка
+    /// побайтово та же, что была литералом, — записи истории (через
+    /// `providerTagForHistory`) остаются совместимыми.
+    var title: String { "\(plainTitle) (Local)" }
+
+    /// Короткое имя для узких плашек: в сетке выбора сервиса на онбординге
+    /// на плитку приходится ~160 pt при минимальной ширине окна, и полное
+    /// `title` там не помещается. Не локализуется по той же причине, что и
+    /// `title`.
+    var shortTitle: String {
         switch self {
-        case .whisper: return "Whisper Large v3 Turbo (Local)"
-        case .parakeet: return "Parakeet TDT 0.6B v3 (Local)"
+        case .whisper: return "Whisper"
+        case .parakeet: return "Parakeet"
         }
     }
 

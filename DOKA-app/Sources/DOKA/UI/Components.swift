@@ -233,14 +233,23 @@ struct CollapsibleReveal<Content: View>: View {
 /// Один и тот же ряд состояний нужен и карточке модели распознавания
 /// в «Сервисе», и строке диаризатора на странице транскрибации — держим
 /// его в одном месте, чтобы поведение и вид не разъезжались.
+///
+/// `name` подменяет слово-статус именем ресурса: там, где название модели над
+/// строкой не показано (третий шаг онбординга), вместо «Не скачана · ~1,6 ГБ»
+/// выводится «Whisper Large v3 Turbo · ~1,6 ГБ». По умолчанию nil — в
+/// «Сервисе» и у диаризатора остаются слова статуса, как были.
 struct LocalAssetStatusView: View {
     let asset: LocalAsset
+    let name: String?
 
     @ObservedObject private var models = LocalModelStore.shared
     @State private var confirmDelete = false
 
-    init(asset: LocalAsset) {
+    // Инициализатор явный: приватные свойства выше делают синтезированный
+    // memberwise-init приватным, и вью нельзя было бы создать из других файлов.
+    init(asset: LocalAsset, name: String? = nil) {
         self.asset = asset
+        self.name = name
     }
 
     var body: some View {
@@ -260,7 +269,8 @@ struct LocalAssetStatusView: View {
         switch models.state(for: asset) {
         case .notDownloaded:
             HStack(spacing: 12) {
-                Text(L("service.local.notDownloaded", Self.bytes(asset.approxDownloadBytes)))
+                Text(name.map { L("service.local.namedApprox", $0, Self.bytes(asset.approxDownloadBytes)) }
+                     ?? L("service.local.notDownloaded", Self.bytes(asset.approxDownloadBytes)))
                     .foregroundStyle(.secondary)
                 Button(L("service.local.download")) {
                     models.download(asset)
@@ -288,7 +298,8 @@ struct LocalAssetStatusView: View {
             }
         case .ready(let size):
             HStack(spacing: 12) {
-                Label(L("service.local.ready", Self.bytes(size)),
+                Label(name.map { L("service.local.namedReady", $0, Self.bytes(size)) }
+                      ?? L("service.local.ready", Self.bytes(size)),
                       systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
                 Button(L("service.local.deleteModel")) {
