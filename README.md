@@ -98,9 +98,11 @@ cd DOKA/DOKA-app
 ./build.sh
 ```
 
-The app is installed to `~/Applications/DOKA.app`. On first launch macOS asks for
-**Microphone** and **Accessibility** permissions — the first records your voice, the second
-pastes the text.
+The app is installed to `~/Applications/DOKA.app`. First launch walks you through three
+steps: **Microphone** and **Accessibility** permissions — the first records your voice, the
+second pastes the text — and then the recognition service. Pick a cloud service and paste
+its key, or pick a local model and download it right there: it runs on your Mac, with no
+internet and no key.
 
 ## Building and signing
 
@@ -129,17 +131,18 @@ the microphone and accessibility permissions.
 
 ## Recognition services
 
-Pick one in the **Service** section:
+Pick one on first launch, or later in the **Service** section:
 
 | Service | API key | Notes |
 |---|---|---|
 | Whisper Large v3 Turbo (Local) | not needed | ~1.6 GB one-time download, runs through WhisperKit on the Neural Engine |
-| Parakeet TDT 0.6B v3 (Local) | not needed | ~1 GB, runs through FluidAudio, Apple Silicon only |
+| Parakeet TDT 0.6B v3 (Local) | not needed | ~700 MB, runs through FluidAudio, Apple Silicon only |
 | Built-in (Nexara) | required | adds recording-type presets, speaker roles, AI analysis and async jobs |
 | Custom service | required | any OpenAI-compatible `/audio/transcriptions` endpoint |
 
-Local models are downloaded once from the Service section, prepared for your chip on first
-use, and unloaded from memory after five minutes of inactivity.
+Local models are downloaded once — from the third step of the first launch or from the
+Service section — prepared for your chip on first use, and unloaded from memory after five
+minutes of inactivity.
 
 Speaker diarization works with every service: the built-in one does it server-side, everyone
 else gets the on-device diarizer. Two things stay exclusive to the built-in service and are
